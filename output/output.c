@@ -1,6 +1,5 @@
 #include <termios.h>
 #include <string.h>
-#include <unistd.h>
 #include <errno.h>
 
 #include "output.h"
@@ -34,7 +33,7 @@ void editorDrawRows(struct abuf *ab) {
 
   for (y = 0; y < editor.screenrows; y++) {
     if (y >= editor.numrows) {
-      if (y == editor.screenrows / 3) {
+      if (editor.numrows == 0 && y == editor.screenrows / 3) {
         char welcome[80];
         int welcomelen = snprintf(welcome, sizeof(welcome),
           "Aetheris Text Editor -- version %s", AETHERIS_VERSION);
@@ -50,9 +49,9 @@ void editorDrawRows(struct abuf *ab) {
         abAppend(ab, "~", 1);
       }
     } else {
-      int len = editor.row.size;
+      int len = editor.row[y].size;
       if (len > editor.screencols) len = editor.screencols;
-      abAppend(ab, editor.row.chars, len);
+      abAppend(ab, editor.row[y].chars, len);
     }
 
     abAppend(ab, "\x1b[K", 3);
@@ -60,6 +59,17 @@ void editorDrawRows(struct abuf *ab) {
       abAppend(ab, "\r\n", 2);
     }
   }
+}
+
+void editorAppendRow(char *s, size_t len) {
+  editor.row = realloc(editor.row, sizeof(erow) * (editor.numrows + 1));
+
+  int at = editor.numrows;
+  editor.row[at].size = len;
+  editor.row[at].chars = malloc(len + 1);
+  memcpy(editor.row[at].chars, s, len);
+  editor.row[at].chars[len] = '\0';
+  editor.numrows++;
 }
 
 void editorRefreshScreen() {

@@ -1,3 +1,7 @@
+#define _DEFAULT_SOURCE
+#define _BSD_SOURCE
+#define _GNU_SOURCE
+
 #include <termios.h>
 #include <unistd.h>
 
@@ -11,6 +15,7 @@ void initEditor() {
   editor.cx = 0;
   editor.cy = 0;
   editor.numrows = 0;
+  editor.row = NULL;
 
   if (getWindowSize(&editor.screenrows, &editor.screencols) == -1) die("getWindowSize");
 }

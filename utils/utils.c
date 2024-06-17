@@ -5,6 +5,7 @@
 
 #include "utils.h"
 
+#include "../output/output.h"
 #include "../common.h"
 
 void die(const char *s) {
@@ -22,16 +23,14 @@ void editorOpen(char *filename) {
   size_t linecap = 0;
   ssize_t linelen;
   linelen = getline(&line, &linecap, fp);
-  if (linelen != -1) {
+
+  while ((linelen = getline(&line, &linecap, fp)) != -1) {
     while (linelen > 0 && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r')) {
       linelen--;
     }
-    editor.row.size = linelen;
-    editor.row.chars = malloc(linelen + 1);
-    memcpy(editor.row.chars, line, linelen);
-    editor.row.chars[linelen] = '\0';
-    editor.numrows = 1;
+    editorAppendRow(line, linelen);
   }
+
   free(line);
   fclose(fp);
 }
