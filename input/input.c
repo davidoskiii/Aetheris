@@ -9,15 +9,23 @@
 #include "../common.h"
 
 void editorMoveCursor(int key) {
+  erow *row = (editor.cy >= editor.numrows) ? NULL : &editor.row[editor.cy];
+
   switch (key) {
     case ARROW_LEFT:
       if (editor.cx != 0) {
         editor.cx--;
+      } else if (editor.cy > 0) {
+        editor.cy--;
+        editor.cx = editor.row[editor.cy].size;
       }
       break;
     case ARROW_RIGHT:
-      if (editor.cx != editor.screencols - 1) {
+      if (row && editor.cx < row->size) {
         editor.cx++;
+      } else if (row && editor.cx == row->size) {
+        editor.cy++;
+        editor.cx = 0;
       }
       break;
     case ARROW_UP:
@@ -30,6 +38,12 @@ void editorMoveCursor(int key) {
         editor.cy++;
       }
       break;
+  }
+
+  row = (editor.cy >= editor.numrows) ? NULL : &editor.row[editor.cy];
+  int rowlen = row ? row->size : 0;
+  if (editor.cx > rowlen) {
+    editor.cx = rowlen;
   }
 }
 
