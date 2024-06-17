@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "terminal.h"
+
 #include "../utils/utils.h"
 #include "../common.h"
 

@@ -3,11 +3,8 @@
 
 #include "terminal/terminal.h"
 #include "input/input.h"
+#include "output/output.h"
 #include "common.h"
-
-void editorRefreshScreen() {
-  write(STDOUT_FILENO, "\x1b[2J", 4);
-}
 
 int main() {
   enableRawMode();
