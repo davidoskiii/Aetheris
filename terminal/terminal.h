@@ -5,6 +5,7 @@ void disableRawMode();
 void enableRawMode();
 char editorReadKey();
 
+int getCursorPosition(int *rows, int *cols);
 int getWindowSize(int *rows, int *cols);
 
 #endif
