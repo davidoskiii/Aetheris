@@ -4,6 +4,6 @@
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 void die(const char *s);
-void editorOpen();
+void editorOpen(char *filename);
 
 #endif
