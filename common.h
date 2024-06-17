@@ -7,10 +7,17 @@
 
 #include <termios.h>
 
+typedef struct erow {
+  int size;
+  char *chars;
+} erow;
+
 typedef struct editorConfig {
   int cx, cy;
   int screenrows;
   int screencols;
+  int numrows;
+  erow row;
   struct termios orig_termios;
 } editorConfig;
 

@@ -33,20 +33,26 @@ void editorDrawRows(struct abuf *ab) {
   int y;
 
   for (y = 0; y < editor.screenrows; y++) {
-    if (y == editor.screenrows / 3) {
-      char welcome[80];
-      int welcomelen = snprintf(welcome, sizeof(welcome),
-        "Aetheris Text Editor -- version %s", AETHERIS_VERSION);
-      if (welcomelen > editor.screencols) welcomelen = editor.screencols;
-      int padding = (editor.screencols - welcomelen) / 2;
-      if (padding) {
+    if (y >= editor.numrows) {
+      if (y == editor.screenrows / 3) {
+        char welcome[80];
+        int welcomelen = snprintf(welcome, sizeof(welcome),
+          "Aetheris Text Editor -- version %s", AETHERIS_VERSION);
+        if (welcomelen > editor.screencols) welcomelen = editor.screencols;
+        int padding = (editor.screencols - welcomelen) / 2;
+        if (padding) {
+          abAppend(ab, "~", 1);
+          padding--;
+        }
+        while (padding--) abAppend(ab, " ", 1);
+        abAppend(ab, welcome, welcomelen);
+      } else {
         abAppend(ab, "~", 1);
-        padding--;
       }
-      while (padding--) abAppend(ab, " ", 1);
-      abAppend(ab, welcome, welcomelen);
     } else {
-      abAppend(ab, "~", 1);
+      int len = editor.row.size;
+      if (len > editor.screencols) len = editor.screencols;
+      abAppend(ab, editor.row.chars, len);
     }
 
     abAppend(ab, "\x1b[K", 3);
