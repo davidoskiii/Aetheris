@@ -10,8 +10,12 @@
 
 void editorDrawRows() {
   int y;
-  for (y = 0; y < 24; y++) {
-    write(STDOUT_FILENO, "~\r\n", 3);
+  for (y = 0; y < editor.screenrows; y++) {
+    write(STDOUT_FILENO, "~", 1);
+
+    if (y < editor.screenrows - 1) {
+      write(STDOUT_FILENO, "\r\n", 2);
+    }
   }
 }
 
