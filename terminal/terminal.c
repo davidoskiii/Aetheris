@@ -7,16 +7,16 @@
 #include "../utils/utils.h"
 #include "../common.h"
 
-struct termios orig_termios;
+editorConfig editor;
 
 void disableRawMode() {
-  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1) die("tcsetattr");
+  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &editor.orig_termios) == -1) die("tcsetattr");
 }
 
 void enableRawMode() {
-  if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) die("tcgetattr");
+  if (tcgetattr(STDIN_FILENO, &editor.orig_termios) == -1) die("tcgetattr");
   atexit(disableRawMode);
-  struct termios raw = orig_termios;
+  struct termios raw = editor.orig_termios;
   raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
   raw.c_oflag &= ~(OPOST);
   raw.c_cflag |= (CS8);
