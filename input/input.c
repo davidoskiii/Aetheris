@@ -8,6 +8,23 @@
 #include "../utils/utils.h"
 #include "../common.h"
 
+void editorMoveCursor(char key) {
+  switch (key) {
+    case 'a':
+      editor.cx--;
+      break;
+    case 'd':
+      editor.cx++;
+      break;
+    case 'w':
+      editor.cy--;
+      break;
+    case 's':
+      editor.cy++;
+      break;
+  }
+}
+
 void editorProcessKeypress() {
   char c = editorReadKey();
   switch (c) {
@@ -18,5 +35,11 @@ void editorProcessKeypress() {
       exit(0);
       break;
     }
+    case 'w':
+    case 's':
+    case 'a':
+    case 'd':
+      editorMoveCursor(c);
+      break;
   }
 }

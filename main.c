@@ -8,6 +8,9 @@
 #include "common.h"
 
 void initEditor() {
+  editor.cx = 0;
+  editor.cy = 0;
+
   if (getWindowSize(&editor.screenrows, &editor.screencols) == -1) die("getWindowSize");
 }
 
