@@ -26,7 +26,7 @@ void editorMoveCursor(int key) {
       }
       break;
     case ARROW_DOWN:
-      if (editor.cy != editor.screenrows - 1) {
+      if (editor.cy < editor.numrows) {
         editor.cy++;
       }
       break;

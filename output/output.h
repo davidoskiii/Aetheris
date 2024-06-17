@@ -8,5 +8,6 @@ typedef struct abuf abuf;
 void editorDrawRows(struct abuf *ab);
 void editorAppendRow(char *s, size_t len);
 void editorRefreshScreen();
+void editorScroll();
 
 #endif

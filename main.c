@@ -14,6 +14,7 @@
 void initEditor() {
   editor.cx = 0;
   editor.cy = 0;
+  editor.rowoff = 0;
   editor.numrows = 0;
   editor.row = NULL;
 

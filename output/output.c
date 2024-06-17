@@ -32,7 +32,8 @@ void editorDrawRows(struct abuf *ab) {
   int y;
 
   for (y = 0; y < editor.screenrows; y++) {
-    if (y >= editor.numrows) {
+    int filerow = y + editor.rowoff;
+    if (filerow >= editor.numrows) {
       if (editor.numrows == 0 && y == editor.screenrows / 3) {
         char welcome[80];
         int welcomelen = snprintf(welcome, sizeof(welcome),
@@ -49,9 +50,9 @@ void editorDrawRows(struct abuf *ab) {
         abAppend(ab, "~", 1);
       }
     } else {
-      int len = editor.row[y].size;
+      int len = editor.row[filerow].size;
       if (len > editor.screencols) len = editor.screencols;
-      abAppend(ab, editor.row[y].chars, len);
+      abAppend(ab, editor.row[filerow].chars, len);
     }
 
     abAppend(ab, "\x1b[K", 3);
@@ -73,6 +74,8 @@ void editorAppendRow(char *s, size_t len) {
 }
 
 void editorRefreshScreen() {
+  editorScroll();
+
   struct abuf ab = ABUF_INIT;
 
   abAppend(&ab, "\x1b[?25l", 6);
@@ -81,11 +84,21 @@ void editorRefreshScreen() {
   editorDrawRows(&ab);
 
   char buf[32];
-  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", editor.cy + 1, editor.cx + 1);
+  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (editor.cy - editor.rowoff) + 1, editor.cx + 1);
   abAppend(&ab, buf, strlen(buf));
 
   abAppend(&ab, "\x1b[?25h", 6);
 
   write(STDOUT_FILENO, ab.b, ab.len);
   abFree(&ab);
+}
+
+void editorScroll() {
+  if (editor.cy < editor.rowoff) {
+    editor.rowoff = editor.cy;
+  }
+
+  if (editor.cy >= editor.rowoff + editor.screenrows) {
+    editor.rowoff = editor.cy - editor.screenrows + 1;
+  }
 }
