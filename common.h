@@ -9,7 +9,9 @@
 
 typedef struct erow {
   int size;
+  int rsize;
   char *chars;
+  char *render;
 } erow;
 
 typedef struct editorConfig {
@@ -38,5 +40,6 @@ enum editorKey {
 extern editorConfig editor;
 
 #define AETHERIS_VERSION "0.0.1"
+#define AETHERIS_TAB_STOP 8
 
 #endif

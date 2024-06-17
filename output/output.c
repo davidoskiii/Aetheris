@@ -50,10 +50,10 @@ void editorDrawRows(struct abuf *ab) {
         abAppend(ab, "~", 1);
       }
     } else {
-      int len = editor.row[filerow].size - editor.coloff;
+      int len = editor.row[filerow].rsize - editor.coloff;
       if (len < 0) len = 0;
       if (len > editor.screencols) len = editor.screencols;
-      abAppend(ab, &editor.row[filerow].chars[editor.coloff], len);
+      abAppend(ab, &editor.row[filerow].render[editor.coloff], len);
     }
 
     abAppend(ab, "\x1b[K", 3);
@@ -61,6 +61,29 @@ void editorDrawRows(struct abuf *ab) {
       abAppend(ab, "\r\n", 2);
     }
   }
+}
+
+void editorUpdateRow(erow *row) {
+  int tabs = 0;
+  int j;
+
+  for (j = 0; j < row->size; j++) if (row->chars[j] == '\t') tabs++;
+
+  free(row->render);
+  row->render = malloc(row->size + tabs*7 + 1);
+
+  int idx = 0;
+  for (j = 0; j < row->size; j++) {
+    if (row->chars[j] == '\t') {
+      row->render[idx++] = ' ';
+      while (idx % 8 != 0) row->render[idx++] = ' ';
+    } else {
+      row->render[idx++] = row->chars[j];
+    }
+  }
+
+  row->render[idx] = '\0';
+  row->rsize = idx;
 }
 
 void editorAppendRow(char *s, size_t len) {
@@ -71,6 +94,11 @@ void editorAppendRow(char *s, size_t len) {
   editor.row[at].chars = malloc(len + 1);
   memcpy(editor.row[at].chars, s, len);
   editor.row[at].chars[len] = '\0';
+
+  editor.row[at].rsize = 0;
+  editor.row[at].render = NULL;
+  editorUpdateRow(&editor.row[at]);
+
   editor.numrows++;
 }
 
