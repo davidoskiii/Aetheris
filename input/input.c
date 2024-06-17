@@ -11,16 +11,24 @@
 void editorMoveCursor(int key) {
   switch (key) {
     case ARROW_LEFT:
-      editor.cx--;
+      if (editor.cx != 0) {
+        editor.cx--;
+      }
       break;
     case ARROW_RIGHT:
-      editor.cx++;
+      if (editor.cx != editor.screencols - 1) {
+        editor.cx++;
+      }
       break;
     case ARROW_UP:
-      editor.cy--;
+      if (editor.cy != 0) {
+        editor.cy--;
+      }
       break;
     case ARROW_DOWN:
-      editor.cy++;
+      if (editor.cy != editor.screenrows - 1) {
+        editor.cy++;
+      }
       break;
   }
 }
