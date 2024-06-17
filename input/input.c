@@ -43,6 +43,18 @@ void editorProcessKeypress() {
       exit(0);
       break;
     }
+    case HOME_KEY:
+      editor.cx = 0;
+      break;
+    case END_KEY:
+      editor.cx = editor.screencols - 1;
+      break;
+    case PAGE_UP:
+    case PAGE_DOWN: {
+      int times = editor.screenrows;
+      while (times--) editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
+      break;
+    }
     case ARROW_UP:
     case ARROW_DOWN:
     case ARROW_LEFT:
