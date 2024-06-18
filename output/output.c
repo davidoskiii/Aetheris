@@ -102,6 +102,17 @@ void editorAppendRow(char *s, size_t len) {
   editor.numrows++;
 }
 
+int editorRowCxToRx(erow *row, int cx) {
+  int rx = 0;
+  int j;
+  for (j = 0; j < cx; j++) {
+    if (row->chars[j] == '\t')
+      rx += (AETHERIS_TAB_STOP - 1) - (rx % AETHERIS_TAB_STOP);
+    rx++;
+  }
+  return rx;
+}
+
 void editorRefreshScreen() {
   editorScroll();
 
@@ -113,7 +124,7 @@ void editorRefreshScreen() {
   editorDrawRows(&ab);
 
   char buf[32];
-  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (editor.cy - editor.rowoff) + 1, (editor.cx - editor.coloff) + 1);
+  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (editor.cy - editor.rowoff) + 1, (editor.rx - editor.coloff) + 1);
   abAppend(&ab, buf, strlen(buf));
 
   abAppend(&ab, "\x1b[?25h", 6);
@@ -123,6 +134,12 @@ void editorRefreshScreen() {
 }
 
 void editorScroll() {
+  editor.rx = 0;
+
+  if (editor.cy < editor.numrows) {
+    editor.rx = editorRowCxToRx(&editor.row[editor.cy], editor.cx);
+  }
+
   if (editor.cy < editor.rowoff) {
     editor.rowoff = editor.cy;
   }
@@ -131,11 +148,11 @@ void editorScroll() {
     editor.rowoff = editor.cy - editor.screenrows + 1;
   }
 
-  if (editor.cx < editor.coloff) {
-    editor.coloff = editor.cx;
+  if (editor.rx < editor.coloff) {
+    editor.coloff = editor.rx;
   }
 
-  if (editor.cx >= editor.coloff + editor.screencols) {
-    editor.coloff = editor.cx - editor.screencols + 1;
+  if (editor.rx >= editor.coloff + editor.screencols) {
+    editor.coloff = editor.rx - editor.screencols + 1;
   }
 }
