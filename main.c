@@ -19,8 +19,10 @@ void initEditor() {
   editor.coloff = 0;
   editor.numrows = 0;
   editor.row = NULL;
+  editor.filename = NULL;
 
   if (getWindowSize(&editor.screenrows, &editor.screencols) == -1) die("getWindowSize");
+  editor.screenrows -= 1;
 }
 
 int main(int argc, char *argv[]) {

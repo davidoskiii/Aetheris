@@ -17,6 +17,9 @@ void die(const char *s) {
 }
 
 void editorOpen(char *filename) {
+  free(editor.filename);
+  editor.filename = strdup(filename);
+
   FILE *fp = fopen(filename, "r");
   if (!fp) die("fopen");
 
