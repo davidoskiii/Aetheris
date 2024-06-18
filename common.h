@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <time.h>
 #include <termios.h>
 
 typedef struct erow {
@@ -23,6 +24,8 @@ typedef struct editorConfig {
   int screencols;
   int numrows;
   char *filename;
+  char statusmsg[80];
+  time_t statusmsg_time;
   erow *row;
   struct termios orig_termios;
 } editorConfig;

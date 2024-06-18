@@ -9,5 +9,6 @@ void editorDrawRows(struct abuf *ab);
 void editorAppendRow(char *s, size_t len);
 void editorRefreshScreen();
 void editorScroll();
+void editorSetStatusMessage(const char *fmt, ...);
 
 #endif

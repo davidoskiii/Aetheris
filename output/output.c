@@ -1,11 +1,9 @@
 #include <termios.h>
 #include <string.h>
-#include <errno.h>
+#include <stdarg.h>
 
 #include "output.h"
 
-#include "../terminal/terminal.h"
-#include "../utils/utils.h"
 #include "../common.h"
 
 struct abuf {
@@ -47,6 +45,21 @@ void editorDrawStatusBar(struct abuf *ab) {
     }
   }
   abAppend(ab, "\x1b[m", 3);
+  abAppend(ab, "\r\n", 2);
+}
+
+void editorDrawMessageBar(struct abuf *ab) {
+  abAppend(ab, "\x1b[K", 3);
+  int msglen = strlen(editor.statusmsg);
+  if (msglen > editor.screencols) msglen = editor.screencols;
+
+  int padding = (editor.screencols - msglen) / 2;
+
+  if (padding) padding--;
+
+  while (padding--) abAppend(ab, " ", 1);
+
+  if (msglen && time(NULL) - editor.statusmsg_time < 5) abAppend(ab, editor.statusmsg, msglen);
 }
 
 void editorDrawRows(struct abuf *ab) {
@@ -142,6 +155,7 @@ void editorRefreshScreen() {
 
   editorDrawRows(&ab);
   editorDrawStatusBar(&ab);
+  editorDrawMessageBar(&ab);
 
   char buf[32];
   snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (editor.cy - editor.rowoff) + 1, (editor.rx - editor.coloff) + 1);
@@ -151,6 +165,14 @@ void editorRefreshScreen() {
 
   write(STDOUT_FILENO, ab.b, ab.len);
   abFree(&ab);
+}
+
+void editorSetStatusMessage(const char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(editor.statusmsg, sizeof(editor.statusmsg), fmt, ap);
+  va_end(ap);
+  editor.statusmsg_time = time(NULL);
 }
 
 void editorScroll() {

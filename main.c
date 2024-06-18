@@ -20,17 +20,22 @@ void initEditor() {
   editor.numrows = 0;
   editor.row = NULL;
   editor.filename = NULL;
+  editor.statusmsg[0] = '\0';
+  editor.statusmsg_time = 0;
 
   if (getWindowSize(&editor.screenrows, &editor.screencols) == -1) die("getWindowSize");
-  editor.screenrows -= 1;
+  editor.screenrows -= 2;
 }
 
 int main(int argc, char *argv[]) {
   enableRawMode();
   initEditor();
+
   if (argc >= 2) {
     editorOpen(argv[1]);
   }
+
+  editorSetStatusMessage("HELP: Ctrl-Q = quit");
 
   while (1) {
     editorRefreshScreen();
