@@ -1,5 +1,7 @@
+#include <string.h>
 #include <termios.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <ctype.h>
 #include <sys/ioctl.h>
 #include <errno.h>
@@ -7,6 +9,7 @@
 #include "terminal.h"
 
 #include "../utils/utils.h"
+#include "../output/output.h"
 #include "../common.h"
 
 editorConfig editor;
@@ -28,6 +31,26 @@ void enableRawMode() {
   raw.c_cc[VTIME] = 1;
 
   if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("tcsetattr");
+}
+
+void editorSave() {
+  if (editor.filename == NULL) return;
+  int len;
+  char *buf = editorRowsToString(&len);
+  int fd = open(editor.filename, O_RDWR | O_CREAT, 0644);
+  if (fd != -1) {
+    if (ftruncate(fd, len) != -1) {
+      if (write(fd, buf, len) == len) {
+        close(fd);
+        free(buf);
+        editorSetStatusMessage("%d bytes written to disk", len);
+        return;
+      }
+    }
+    close(fd);
+  }
+  free(buf);
+  editorSetStatusMessage("Can't save! I/O error: %s", strerror(errno));
 }
 
 int editorReadKey() {

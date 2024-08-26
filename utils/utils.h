@@ -5,5 +5,6 @@
 
 void die(const char *s);
 void editorOpen(char *filename);
+char *editorRowsToString(int *buflen);
 
 #endif

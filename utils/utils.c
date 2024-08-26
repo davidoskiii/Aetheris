@@ -33,3 +33,20 @@ void editorOpen(char *filename) {
   free(line);
   fclose(fp);
 }
+
+char *editorRowsToString(int *buflen) {
+  int totlen = 0;
+  int j;
+  for (j = 0; j < editor.numrows; j++)
+    totlen += editor.row[j].size + 1;
+  *buflen = totlen;
+  char *buf = malloc(totlen);
+  char *p = buf;
+  for (j = 0; j < editor.numrows; j++) {
+    memcpy(p, editor.row[j].chars, editor.row[j].size);
+    p += editor.row[j].size;
+    *p = '\n';
+    p++;
+  }
+  return buf;
+}
