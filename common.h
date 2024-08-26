@@ -48,5 +48,6 @@ extern editorConfig editor;
 
 #define AETHERIS_VERSION "0.0.1"
 #define AETHERIS_TAB_STOP 8
+#define AETHERIS_QUIT_TIMES 3
 
 #endif

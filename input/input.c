@@ -68,6 +68,7 @@ void editorInsertChar(int c) {
 }
 
 void editorProcessKeypress() {
+  static int quit_times = AETHERIS_QUIT_TIMES;
   int c = editorReadKey();
   switch (c) {
     case '\r':
@@ -75,6 +76,12 @@ void editorProcessKeypress() {
       break;
 
     case CTRL_KEY('q'): {
+      if (editor.dirty && quit_times > 0) {
+        editorSetStatusMessage("WARNING!!! File has unsaved changes. "
+          "Press Ctrl-Q %d more times to quit.", quit_times);
+        quit_times--;
+        return;
+      }
       write(STDOUT_FILENO, "\x1b[2J", 4);
       write(STDOUT_FILENO, "\x1b[H", 3);
 
@@ -123,4 +130,5 @@ void editorProcessKeypress() {
       editorInsertChar(c);
       break;
   }
+  quit_times = AETHERIS_QUIT_TIMES;
 }
