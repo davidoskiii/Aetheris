@@ -32,6 +32,7 @@ void editorOpen(char *filename) {
   }
   free(line);
   fclose(fp);
+  editor.dirty = 0;
 }
 
 char *editorRowsToString(int *buflen) {

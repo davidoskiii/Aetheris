@@ -27,6 +27,7 @@ typedef struct editorConfig {
   char statusmsg[80];
   time_t statusmsg_time;
   erow *row;
+  int dirty;
   struct termios orig_termios;
 } editorConfig;
 

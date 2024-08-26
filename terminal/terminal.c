@@ -43,6 +43,7 @@ void editorSave() {
       if (write(fd, buf, len) == len) {
         close(fd);
         free(buf);
+        editor.dirty = 0;
         editorSetStatusMessage("%d bytes written to disk", len);
         return;
       }

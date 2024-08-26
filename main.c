@@ -19,6 +19,7 @@ void initEditor() {
   editor.coloff = 0;
   editor.numrows = 0;
   editor.row = NULL;
+  editor.dirty = 0;
   editor.filename = NULL;
   editor.statusmsg[0] = '\0';
   editor.statusmsg_time = 0;

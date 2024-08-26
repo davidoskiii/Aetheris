@@ -56,6 +56,7 @@ void editorRowInsertChar(erow *row, int at, int c) {
   row->size++;
   row->chars[at] = c;
   editorUpdateRow(row);
+  editor.dirty++;
 }
 
 void editorInsertChar(int c) {
