@@ -1,10 +1,12 @@
 #include <termios.h>
 #include <unistd.h>
+#include <string.h>
 #include <errno.h>
 
 #include "input.h"
 
 #include "../terminal/terminal.h"
+#include "../output/output.h"
 #include "../utils/utils.h"
 #include "../common.h"
 
@@ -47,9 +49,30 @@ void editorMoveCursor(int key) {
   }
 }
 
+void editorRowInsertChar(erow *row, int at, int c) {
+  if (at < 0 || at > row->size) at = row->size;
+  row->chars = realloc(row->chars, row->size + 2);
+  memmove(&row->chars[at + 1], &row->chars[at], row->size - at + 1);
+  row->size++;
+  row->chars[at] = c;
+  editorUpdateRow(row);
+}
+
+void editorInsertChar(int c) {
+  if (editor.cy == editor.numrows) {
+    editorAppendRow("", 0);
+  }
+  editorRowInsertChar(&editor.row[editor.cy], editor.cx, c);
+  editor.cx++;
+}
+
 void editorProcessKeypress() {
   int c = editorReadKey();
   switch (c) {
+    case '\r':
+      /* TODO */
+      break;
+
     case CTRL_KEY('q'): {
       write(STDOUT_FILENO, "\x1b[2J", 4);
       write(STDOUT_FILENO, "\x1b[H", 3);
@@ -57,6 +80,14 @@ void editorProcessKeypress() {
       exit(0);
       break;
     }
+    case BACKSPACE:
+    case CTRL_KEY('h'):
+    case DEL_KEY:
+      /* TODO */
+      break;
+    case CTRL_KEY('l'):
+    case '\x1b':
+      break;
     case HOME_KEY:
       editor.cx = 0;
       break;
@@ -82,6 +113,10 @@ void editorProcessKeypress() {
     case ARROW_LEFT:
     case ARROW_RIGHT:
       editorMoveCursor(c);
+      break;
+
+    default:
+      editorInsertChar(c);
       break;
   }
 }

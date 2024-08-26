@@ -4,7 +4,6 @@
 
 #include "output.h"
 
-#include "../common.h"
 
 struct abuf {
   char *b;
