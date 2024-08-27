@@ -12,7 +12,7 @@
 #include "common.h"
 
 void initEditor() {
-  editor.cx = AETHERIS_LINE_NUMBER_PREFIX;
+  editor.cx = 0;
   editor.cy = 0;
   editor.rx = 0;
   editor.rowoff = 0;
@@ -26,8 +26,6 @@ void initEditor() {
 
   if (getWindowSize(&editor.screenrows, &editor.screencols) == -1) die("getWindowSize");
   editor.screenrows -= 2;
-  editor.screenrows -= 1;
-  editor.screencols -= AETHERIS_LINE_NUMBER_PREFIX;
 }
 
 int main(int argc, char *argv[]) {

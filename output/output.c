@@ -26,7 +26,6 @@ void abFree(struct abuf *ab) {
 }
 
 void editorDrawStatusBar(struct abuf *ab) {
-  abAppend(ab, "   ", 3);
   abAppend(ab, "\x1b[7m", 4);
   char status[80], rstatus[80];
   int len = snprintf(status, sizeof(status), "%.20s - %d lines %s",
@@ -34,13 +33,6 @@ void editorDrawStatusBar(struct abuf *ab) {
     editor.dirty ? "(modified)" : "");
   int rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d",
     editor.cy + 1, editor.numrows);
-
-  if (editor.cy + 1 > editor.numrows) {
-    rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d", editor.numrows, editor.numrows);
-  } else {
-    rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d", editor.cy + 1, editor.numrows);
-  }
-
   if (len > editor.screencols) len = editor.screencols;
   abAppend(ab, status, len);
   while (len < editor.screencols) {
@@ -92,14 +84,9 @@ void editorDrawRows(struct abuf *ab) {
         abAppend(ab, "~", 1);
       }
     } else {
-      char linenum[16];
-      int linenum_len = snprintf(linenum, sizeof(linenum), "%4d  ", filerow + 1);
-      
-      abAppend(ab, linenum, linenum_len);
-      
       int len = editor.row[filerow].rsize - editor.coloff;
       if (len < 0) len = 0;
-      if (len > editor.screencols - linenum_len) len = editor.screencols - linenum_len;
+      if (len > editor.screencols) len = editor.screencols;
       abAppend(ab, &editor.row[filerow].render[editor.coloff], len);
     }
 
