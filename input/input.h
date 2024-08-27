@@ -4,4 +4,6 @@
 void editorMoveCursor(int key);
 void editorProcessKeypress();
 
+void editorDelRow(int at);
+
 #endif
