@@ -159,6 +159,19 @@ char *editorPrompt(char *prompt) {
   }
 }
 
+
+void editorProcessCommand(const char* command, int quit_times) {
+  if (strcmp(command, "s") == 0) {
+    editorSave();
+  } else if (strcmp(command, "q") == 0) {
+    editorQuitSafe(quit_times);
+  } else if (strcmp(command, "q!") == 0) {
+    editorQuit();
+  } else {
+    editorSetStatusMessage("Unknown command '%s'", command);
+  }
+}
+
 void editorProcessKeypress() {
   static int quit_times = AETHERIS_QUIT_TIMES;
   int c = editorReadKey();
@@ -167,6 +180,16 @@ void editorProcessKeypress() {
       editorInsertNewline();
       break;
 
+    case CTRL_KEY('t'): {
+      char* command = editorPrompt("Type a command: %s (ESC to cancel)");
+      if (command == NULL) {
+        editorSetStatusMessage("Command aborted");
+        break;
+      }
+
+      editorProcessCommand(command, quit_times);
+      break;
+    }
     case CTRL_KEY('q'): {
       if (editor.dirty && quit_times > 0) {
         editorSetStatusMessage("WARNING!!! File has unsaved changes. "

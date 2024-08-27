@@ -38,6 +38,26 @@ void editorOpen(char *filename) {
   editor.dirty = 0;
 }
 
+void editorQuit() {
+  write(STDOUT_FILENO, "\x1b[2J", 4);
+  write(STDOUT_FILENO, "\x1b[H", 3);
+
+  exit(0);
+}
+
+void editorQuitSafe(int quit_times) {
+  if (editor.dirty && quit_times > 0) {
+    editorSetStatusMessage("WARNING!!! File has unsaved changes. "
+      "Press Ctrl-Q %d more times to quit.", quit_times);
+    quit_times--;
+    return;
+  }
+  write(STDOUT_FILENO, "\x1b[2J", 4);
+  write(STDOUT_FILENO, "\x1b[H", 3);
+
+  exit(0);
+}
+
 void editorSave() {
   if (editor.filename == NULL) {
     editor.filename = editorPrompt("Save as: %s (ESC to cancel)");
