@@ -1,9 +1,11 @@
+#include <ctype.h>
 #include <termios.h>
 #include <string.h>
 #include <stdarg.h>
 
 #include "output.h"
 
+#include "../syntax/syntax.h"
 
 struct abuf {
   char *b;
@@ -87,13 +89,36 @@ void editorDrawRows(struct abuf *ab) {
       int len = editor.row[filerow].rsize - editor.coloff;
       if (len < 0) len = 0;
       if (len > editor.screencols) len = editor.screencols;
-      abAppend(ab, &editor.row[filerow].render[editor.coloff], len);
+      char *c = &editor.row[filerow].render[editor.coloff];
+      unsigned char *hl = &editor.row[filerow].hl[editor.coloff];
+      int current_color = -1;
+      int j;
+      for (j = 0; j < len; j++) {
+        if (hl[j] == HL_NORMAL) {
+          if (current_color != -1) {
+            abAppend(ab, "\x1b[39m", 5);
+            current_color = -1;
+          }
+          abAppend(ab, &c[j], 1);
+        } else {
+          int color = editorSyntaxToColor(hl[j]);
+          if (color != current_color) {
+            current_color = color;
+            char buf[16];
+            int clen = snprintf(buf, sizeof(buf), "\x1b[%dm", color);
+            abAppend(ab, buf, clen);
+          }
+          abAppend(ab, &c[j], 1);
+        }
+      }
+      abAppend(ab, "\x1b[39m", 5);
     }
 
     abAppend(ab, "\x1b[K", 3);
     abAppend(ab, "\r\n", 2);
   }
 }
+
 
 void editorUpdateRow(erow *row) {
   int tabs = 0;
@@ -116,6 +141,8 @@ void editorUpdateRow(erow *row) {
 
   row->render[idx] = '\0';
   row->rsize = idx;
+
+  editorUpdateSyntax(row);
 }
 
 void editorInsertRow(int at, char *s, size_t len) {
@@ -130,6 +157,7 @@ void editorInsertRow(int at, char *s, size_t len) {
 
   editor.row[at].rsize = 0;
   editor.row[at].render = NULL;
+  editor.row[at].hl = NULL;
   editorUpdateRow(&editor.row[at]);
 
   editor.numrows++;

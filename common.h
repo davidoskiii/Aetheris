@@ -13,6 +13,7 @@ typedef struct erow {
   int rsize;
   char *chars;
   char *render;
+  unsigned char *hl;
 } erow;
 
 typedef struct editorConfig {
@@ -42,6 +43,11 @@ enum editorKey {
   END_KEY,
   PAGE_UP,
   PAGE_DOWN
+};
+
+enum editorHighlight {
+  HL_NORMAL = 0,
+  HL_NUMBER
 };
 
 extern editorConfig editor;
