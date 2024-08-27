@@ -17,6 +17,7 @@ struct editorSyntax HLDB[] = {
   {
     "c",
     C_HL_extensions,
+    "//",
     HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS
   },
 };
@@ -31,6 +32,9 @@ void editorUpdateSyntax(erow *row) {
 
   if (editor.syntax == NULL) return;
 
+  char *scs = editor.syntax->singleline_comment_start;
+  int scs_len = scs ? strlen(scs) : 0;
+
   int prev_sep = 1;
   int in_string = 0;
 
@@ -38,6 +42,13 @@ void editorUpdateSyntax(erow *row) {
   while (i < row->rsize) {
     char c = row->render[i];
     unsigned char prev_hl = (i > 0) ? row->hl[i - 1] : HL_NORMAL;
+
+    if (scs_len && !in_string) {
+      if (!strncmp(&row->render[i], scs, scs_len)) {
+        memset(&row->hl[i], HL_COMMENT, row->rsize - i);
+        break;
+      }
+    }
     
     if (editor.syntax->flags & HL_HIGHLIGHT_STRINGS) {
       if (in_string) {
@@ -102,6 +113,7 @@ void editorSelectSyntaxHighlight() {
 
 int editorSyntaxToColor(int hl) {
   switch (hl) {
+    case HL_COMMENT: return 90;
     case HL_STRING: return 32;
     case HL_NUMBER: return 33;
     case HL_MATCH: return 31;
