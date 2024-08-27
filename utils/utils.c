@@ -45,6 +45,30 @@ void editorQuit() {
   exit(0);
 }
 
+void editorFindCallback(char *query, int key) {
+  if (key == '\r' || key == '\x1b') {
+    return;
+  }
+  int i;
+  for (i = 0; i < editor.numrows; i++) {
+    erow *row = &editor.row[i];
+    char *match = strstr(row->render, query);
+    if (match) {
+      editor.cy = i;
+      editor.cx = editorRowRxToCx(row, match - row->render);
+      editor.rowoff = editor.numrows;
+      break;
+    }
+  }
+}
+
+void editorFind() {
+  char *query = editorPrompt("Search: %s (ESC to cancel)", editorFindCallback);
+  if (query) {
+    free(query);
+  }
+}
+
 void editorQuitSafe(int quit_times) {
   if (editor.dirty && quit_times > 0) {
     editorSetStatusMessage("WARNING!!! File has unsaved changes. "
@@ -60,7 +84,7 @@ void editorQuitSafe(int quit_times) {
 
 void editorSave() {
   if (editor.filename == NULL) {
-    editor.filename = editorPrompt("Save as: %s (ESC to cancel)");
+    editor.filename = editorPrompt("Save as: %s (ESC to cancel)", NULL);
     if (editor.filename == NULL) {
       editorSetStatusMessage("Save aborted");
       return;

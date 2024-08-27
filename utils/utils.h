@@ -9,6 +9,7 @@ void editorQuit();
 void editorQuitSafe(int quit_times);
 void editorOpen(char *filename);
 void editorSave();
+void editorFind();
 
 char *editorRowsToString(int *buflen);
 

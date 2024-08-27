@@ -4,7 +4,7 @@
 void editorMoveCursor(int key);
 void editorProcessKeypress();
 
-char *editorPrompt(char *prompt);
+char *editorPrompt(char *prompt, void (*callback)(char *, int));
 void editorDelRow(int at);
 
 #endif
