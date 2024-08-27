@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <time.h>
 #include <termios.h>
 
 typedef struct erow {
@@ -23,11 +24,15 @@ typedef struct editorConfig {
   int screencols;
   int numrows;
   char *filename;
+  char statusmsg[80];
+  time_t statusmsg_time;
   erow *row;
+  int dirty;
   struct termios orig_termios;
 } editorConfig;
 
 enum editorKey {
+  BACKSPACE = 127,
   ARROW_LEFT = 1000,
   ARROW_RIGHT,
   ARROW_UP,
@@ -43,6 +48,7 @@ extern editorConfig editor;
 
 #define AETHERIS_VERSION "0.0.1"
 #define AETHERIS_TAB_STOP 8
+#define AETHERIS_QUIT_TIMES 3
 #define AETHERIS_LINE_NUMBER_PREFIX 6
 
 #endif

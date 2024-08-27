@@ -1,6 +1,7 @@
 #ifndef caetheris_terminal_h
 #define caetheris_terminal_h
 
+void editorSave();
 void disableRawMode();
 void enableRawMode();
 int editorReadKey();

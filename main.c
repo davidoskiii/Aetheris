@@ -19,9 +19,13 @@ void initEditor() {
   editor.coloff = 0;
   editor.numrows = 0;
   editor.row = NULL;
+  editor.dirty = 0;
   editor.filename = NULL;
+  editor.statusmsg[0] = '\0';
+  editor.statusmsg_time = 0;
 
   if (getWindowSize(&editor.screenrows, &editor.screencols) == -1) die("getWindowSize");
+  editor.screenrows -= 2;
   editor.screenrows -= 1;
   editor.screencols -= AETHERIS_LINE_NUMBER_PREFIX;
 }
@@ -29,9 +33,12 @@ void initEditor() {
 int main(int argc, char *argv[]) {
   enableRawMode();
   initEditor();
+
   if (argc >= 2) {
     editorOpen(argv[1]);
   }
+
+  editorSetStatusMessage("HELP: Ctrl-Q = quit | Ctrl-S = save");
 
   while (1) {
     editorRefreshScreen();
