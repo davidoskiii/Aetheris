@@ -29,16 +29,11 @@ void editorDrawStatusBar(struct abuf *ab) {
   abAppend(ab, "   ", 3);
   abAppend(ab, "\x1b[7m", 4);
   char status[80], rstatus[80];
-<<<<<<< HEAD
   int len = snprintf(status, sizeof(status), "%.20s - %d lines %s",
     editor.filename ? editor.filename : "[No Name]", editor.numrows,
     editor.dirty ? "(modified)" : "");
   int rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d",
     editor.cy + 1, editor.numrows);
-=======
-  int len = snprintf(status, sizeof(status), "%.20s - %d lines",
-    editor.filename ? editor.filename : "[No Name]", editor.numrows);
-  int rlen;
 
   if (editor.cy + 1 > editor.numrows) {
     rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d", editor.numrows, editor.numrows);
@@ -46,7 +41,6 @@ void editorDrawStatusBar(struct abuf *ab) {
     rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d", editor.cy + 1, editor.numrows);
   }
 
->>>>>>> master
   if (len > editor.screencols) len = editor.screencols;
   abAppend(ab, status, len);
   while (len < editor.screencols) {
