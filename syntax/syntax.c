@@ -14,7 +14,8 @@
 char* C_HL_extensions[] = { ".c", ".h", ".cpp", NULL };
 char* C_HL_keywords[] = {
   "switch", "if", "while", "for", "break", "continue", "return", "else",
-  "struct", "union", "typedef", "static", "enum", "class", "case",
+  "struct", "union", "typedef", "static", "enum", "class", "case", "extern",
+  "#include", "#define", "#if", "#ifndef", "#endif", "#warning", "#error",
   "int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
   "void|", NULL
 };
@@ -85,7 +86,7 @@ void editorUpdateSyntax(erow *row) {
         continue;
       }
     }
-    
+
     if (editor.syntax->flags & HL_HIGHLIGHT_STRINGS) {
       if (in_string) {
         row->hl[i] = HL_STRING;
@@ -137,6 +138,41 @@ void editorUpdateSyntax(erow *row) {
       }
     }
 
+
+    if (prev_sep && isalpha(c)) {
+      int start = i;
+
+      while (i < row->rsize && (isalnum(row->render[i]) || row->render[i] == '_')) {
+        i++;
+      }
+
+      if (i < row->rsize && row->render[i] == '(') {
+        int j = i + 1;
+        int paren_count = 1;
+
+        while (j < row->rsize) {
+          if (row->render[j] == '(') {
+            paren_count++;
+          } else if (row->render[j] == ')') {
+            paren_count--;
+            if (paren_count == 0) {
+              memset(&row->hl[start], HL_FUNCTION, i - start);
+              break;
+            }
+          }
+          j++;
+        }
+      }
+      prev_sep = 0;
+      continue;
+    }
+
+    if (c == '[' || c == ']' || c == '(' || c == ')' || c == '{' || c == '}' || c == ';') {
+      row->hl[i] = HL_PAREN;
+      i++;
+      prev_sep = 0;
+      continue;
+    }
     prev_sep = is_separator(c);
     i++;
   }
@@ -178,6 +214,8 @@ int editorSyntaxToColor(int hl) {
     case HL_MLCOMMENT:
       return 90;
 
+    case HL_PAREN: return 91;
+    case HL_FUNCTION: return 94;
     case HL_KEYWORD: return 95;
     case HL_IDENTIFIER: return 93;
     case HL_STRING: return 92;

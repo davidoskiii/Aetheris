@@ -50,6 +50,8 @@ enum editorKey {
 
 enum editorHighlight {
   HL_NORMAL = 0,
+  HL_PAREN,
+  HL_FUNCTION,
   HL_COMMENT,
   HL_MLCOMMENT,
   HL_KEYWORD,
