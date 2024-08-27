@@ -165,8 +165,13 @@ char *editorPrompt(char *prompt, void (*callback)(char *, int)) {
 
 
 void editorProcessCommand(const char* command, int quit_times) {
-  if (strcmp(command, "s") == 0) {
+  if (strcmp(command, "w") == 0) {
     editorSave();
+  }  else if (strcmp(command, "wq") == 0) {
+    editorSave();
+    editorQuit();
+  }  else if (strcmp(command, "s") == 0) {
+    editorFind();
   } else if (strcmp(command, "q") == 0) {
     editorQuitSafe(quit_times);
   } else if (strcmp(command, "q!") == 0) {
@@ -185,7 +190,7 @@ void editorProcessKeypress() {
       break;
 
     case CTRL_KEY('t'): {
-      char* command = editorPrompt("Type a command: %s (ESC to cancel)", NULL);
+      char* command = editorPrompt("Type a command: %s (Esc to cancel)", NULL);
       if (command == NULL) {
         editorSetStatusMessage("Command aborted");
         break;
@@ -219,9 +224,7 @@ void editorProcessKeypress() {
     case CTRL_KEY('l'):
     case '\x1b':
       break;
-    case CTRL_KEY('f'):
-      editorFind();
-      break;
+
     case HOME_KEY:
       editor.cx = 0;
       break;
