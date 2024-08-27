@@ -23,6 +23,7 @@ void initEditor() {
   editor.filename = NULL;
   editor.statusmsg[0] = '\0';
   editor.statusmsg_time = 0;
+  editor.syntax = NULL;
 
   if (getWindowSize(&editor.screenrows, &editor.screencols) == -1) die("getWindowSize");
   editor.screenrows -= 2;

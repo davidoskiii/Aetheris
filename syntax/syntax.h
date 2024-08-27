@@ -3,7 +3,13 @@
 
 #include "../common.h"
 
+extern char* C_HL_extensions[];
+extern struct editorSyntax HLDB[];
+
+#define HLDB_ENTRIES (sizeof(HLDB) / sizeof(HLDB[0]))
+
 void editorUpdateSyntax(erow *row);
+void editorSelectSyntaxHighlight();
 int editorSyntaxToColor(int hl);
 
 #endif

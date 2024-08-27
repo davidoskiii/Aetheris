@@ -29,6 +29,7 @@ typedef struct editorConfig {
   time_t statusmsg_time;
   erow *row;
   int dirty;
+  struct editorSyntax *syntax;
   struct termios orig_termios;
 } editorConfig;
 
@@ -47,8 +48,17 @@ enum editorKey {
 
 enum editorHighlight {
   HL_NORMAL = 0,
-  HL_NUMBER
+  HL_NUMBER,
+  HL_MATCH
 };
+
+struct editorSyntax {
+  char *filetype;
+  char **filematch;
+  int flags;
+};
+
+#define HL_HIGHLIGHT_NUMBERS (1<<0)
 
 extern editorConfig editor;
 

@@ -8,6 +8,7 @@
 #include "utils.h"
 
 #include "../output/output.h"
+#include "../syntax/syntax.h"
 #include "../input/input.h"
 #include "../common.h"
 
@@ -22,6 +23,8 @@ void die(const char *s) {
 void editorOpen(char *filename) {
   free(editor.filename);
   editor.filename = strdup(filename);
+
+  editorSelectSyntaxHighlight();
 
   FILE *fp = fopen(filename, "r");
   if (!fp) die("fopen");
@@ -48,6 +51,15 @@ void editorQuit() {
 void editorFindCallback(char *query, int key) {
   static int last_match = -1;
   static int direction = 1;
+
+  static int saved_hl_line;
+  static char *saved_hl = NULL;
+  if (saved_hl) {
+    memcpy(editor.row[saved_hl_line].hl, saved_hl, editor.row[saved_hl_line].rsize);
+    free(saved_hl);
+    saved_hl = NULL;
+  }
+
   if (key == '\r' || key == '\x1b') {
     last_match = -1;
     direction = 1;
@@ -75,6 +87,11 @@ void editorFindCallback(char *query, int key) {
       editor.cy = current;
       editor.cx = editorRowRxToCx(row, match - row->render);
       editor.rowoff = editor.numrows;
+
+      saved_hl_line = current;
+      saved_hl = malloc(row->rsize);
+      memcpy(saved_hl, row->hl, row->rsize);
+      memset(&row->hl[match - row->render], HL_MATCH, strlen(query));
       break;
     }
   }
@@ -116,6 +133,7 @@ void editorSave() {
       editorSetStatusMessage("Save aborted");
       return;
     }
+    editorSelectSyntaxHighlight();
   }
   int len;
   char *buf = editorRowsToString(&len);
