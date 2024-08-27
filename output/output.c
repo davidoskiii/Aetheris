@@ -159,6 +159,9 @@ void editorInsertRow(int at, char *s, size_t len) {
   if (at < 0 || at > editor.numrows) return;
   editor.row = realloc(editor.row, sizeof(erow) * (editor.numrows + 1));
   memmove(&editor.row[at + 1], &editor.row[at], sizeof(erow) * (editor.numrows - at));
+  for (int j = at + 1; j <= editor.numrows; j++) editor.row[j].idx++;
+
+  editor.row[at].idx = at;
 
   editor.row[at].size = len;
   editor.row[at].chars = malloc(len + 1);
@@ -168,6 +171,7 @@ void editorInsertRow(int at, char *s, size_t len) {
   editor.row[at].rsize = 0;
   editor.row[at].render = NULL;
   editor.row[at].hl = NULL;
+  editor.row[at].hl_open_comment = 0;
   editorUpdateRow(&editor.row[at]);
 
   editor.numrows++;
