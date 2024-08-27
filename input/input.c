@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <termios.h>
 #include <unistd.h>
 #include <string.h>
@@ -78,7 +79,7 @@ void editorRowDelChar(erow *row, int at) {
 
 void editorInsertChar(int c) {
   if (editor.cy == editor.numrows) {
-    editorAppendRow("", 0);
+    editorInsertRow(editor.numrows, "", 0);
   }
   editorRowInsertChar(&editor.row[editor.cy], editor.cx, c);
   editor.cx++;
@@ -99,6 +100,21 @@ void editorDelChar() {
   }
 }
 
+void editorInsertNewline() {
+  if (editor.cx == 0) {
+    editorInsertRow(editor.cy, "", 0);
+  } else {
+    erow *row = &editor.row[editor.cy];
+    editorInsertRow(editor.cy + 1, &row->chars[editor.cx], row->size - editor.cx);
+    row = &editor.row[editor.cy];
+    row->size = editor.cx;
+    row->chars[row->size] = '\0';
+    editorUpdateRow(row);
+  }
+  editor.cy++;
+  editor.cx = 0;
+}
+
 void editorFreeRow(erow *row) {
   free(row->render);
   free(row->chars);
@@ -112,12 +128,43 @@ void editorDelRow(int at) {
   editor.dirty++;
 }
 
+char *editorPrompt(char *prompt) {
+  size_t bufsize = 128;
+  char *buf = malloc(bufsize);
+  size_t buflen = 0;
+  buf[0] = '\0';
+  while (1) {
+    editorSetStatusMessage(prompt, buf);
+    editorRefreshScreen();
+    int c = editorReadKey();
+    if (c == DEL_KEY || c == CTRL_KEY('h') || c == BACKSPACE) {
+      if (buflen != 0) buf[--buflen] = '\0';
+    } else if (c == '\x1b') {
+      editorSetStatusMessage("");
+      free(buf);
+      return NULL;
+    } else if (c == '\r') {
+      if (buflen != 0) {
+        editorSetStatusMessage("");
+        return buf;
+      }
+    } else if (!iscntrl(c) && c < 128) {
+      if (buflen == bufsize - 1) {
+        bufsize *= 2;
+        buf = realloc(buf, bufsize);
+      }
+      buf[buflen++] = c;
+      buf[buflen] = '\0';
+    }
+  }
+}
+
 void editorProcessKeypress() {
   static int quit_times = AETHERIS_QUIT_TIMES;
   int c = editorReadKey();
   switch (c) {
     case '\r':
-      /* TODO */
+      editorInsertNewline();
       break;
 
     case CTRL_KEY('q'): {
