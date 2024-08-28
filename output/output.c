@@ -31,9 +31,10 @@ void editorDrawStatusBar(struct abuf *ab) {
   editor.screencols += editor.linenum_indent;
   abAppend(ab, "\x1b[7m", 4);
   char status[80], rstatus[80];
-  int len = snprintf(status, sizeof(status), "%.20s - %d lines %s",
-    editor.filename ? editor.filename : "[No Name]", editor.numrows,
-    editor.dirty ? "(modified)" : "");
+  int len = snprintf(status, sizeof(status), " %s | %.20s - %d lines %s",
+        editor.mode ? "NORMAL" : "INSERT", 
+        editor.filename ? editor.filename : "[No Name]", 
+        editor.numrows, editor.dirty ? "(modified)" : "");
   int rlen = snprintf(rstatus, sizeof(rstatus), "%s | %d/%d",
     editor.syntax ? editor.syntax->filetype : "no ft", editor.cy + 1, editor.numrows);
   if (len > editor.screencols) len = editor.screencols;
@@ -236,12 +237,22 @@ void editorUpdateLinenumIndent() {
 void editorRefreshScreen() {
   editorUpdateLinenumIndent();
   editor.screencols = editor.raw_screencols - editor.linenum_indent;
-  editorScroll();
 
   struct abuf ab = ABUF_INIT;
 
   abAppend(&ab, "\x1b[?25l", 6);
+
+  if (editor.mode == 0) {
+    // Insert mode: Change to vertical bar
+    abAppend(&ab, "\x1b[6 q", 5);
+  } else if (editor.mode == 1) {
+    // Normal mode: Change to block cursor
+    abAppend(&ab, "\x1b[2 q", 5);
+  }
+
   abAppend(&ab, "\x1b[H", 3);
+
+  editorScroll();
 
   editorDrawRows(&ab);
   editorDrawStatusBar(&ab);

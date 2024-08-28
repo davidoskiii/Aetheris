@@ -20,6 +20,7 @@ void initEditor() {
   editor.numrows = 0;
   editor.row = NULL;
   editor.dirty = 0;
+  editor.mode = 1;
   editor.linenum_indent = 6;
   editor.filename = NULL;
   editor.statusmsg[0] = '\0';
@@ -43,7 +44,11 @@ int main(int argc, char *argv[]) {
 
   while (1) {
     editorRefreshScreen();
-    editorProcessKeypress();
+    if (editor.mode == MODE_NORMAL) {
+      editorNormalProcessKeypress();
+    } else {
+      editorProcessKeypress();
+    }
   }
 
   return 0;

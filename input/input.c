@@ -165,6 +165,53 @@ char *editorPrompt(char *prompt, void (*callback)(char *, int)) {
   }
 }
 
+int editorNormalMovement(int key) {
+  switch (key) {
+    case 'h': return ARROW_LEFT; break;
+    case 'j': return ARROW_DOWN; break;
+    case 'k': return ARROW_UP; break;
+    case 'l': return ARROW_RIGHT; break;
+    case '\r': return ARROW_DOWN; break;
+    case ' ': return ARROW_RIGHT; break;
+    case BACKSPACE: return ARROW_LEFT; break;
+    default: return key;
+  }
+}
+
+void editorDoInsert(int key) {
+  switch (key) {
+    case 'i':
+      editor.mode = 0;
+      break;
+    case 'I': 
+      editor.cx = 0;
+      editor.mode = 0;
+      break;
+    case 'a': 
+      editorMoveCursor(ARROW_RIGHT);
+      editor.mode = 0;
+      break;
+    case 'A': 
+      if (editor.cy < editor.numrows) {
+        editor.cx = editor.row[editor.cy].size;
+      }
+      editor.mode = 0;
+      break;
+    case 'o':
+      if (editor.cy < editor.numrows) {
+        editor.cx = editor.row[editor.cy].size;
+      }
+      editorInsertNewline();
+      editor.mode = 0;
+      break;
+    case 'O':
+      editor.cx = 0;
+      editorInsertNewline();
+      editorMoveCursor(ARROW_UP);
+      editor.mode = 0;
+      break;
+  }
+}
 
 void editorProcessCommand(const char* command, int quit_times) {
   if (strcmp(command, "w") == 0) {
@@ -223,8 +270,10 @@ void editorProcessKeypress() {
       if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
       editorDelChar();
       break;
+
     case CTRL_KEY('l'):
     case '\x1b':
+      editor.mode = 1;
       break;
 
     case HOME_KEY:
@@ -259,4 +308,81 @@ void editorProcessKeypress() {
       break;
   }
   quit_times = AETHERIS_QUIT_TIMES;
+}
+
+void editorNormalProcessKeypress() {
+    static int quit_times = AETHERIS_QUIT_TIMES;
+    int c = editorReadKey();
+
+    switch (c) {
+        case CTRL_KEY('q'):
+            if (editor.dirty && quit_times > 0) {
+                editorSetStatusMessage("WARNING!!! File has unsaved changes. "
+          "Press Ctrl-Q %d more times to quit.", quit_times);
+                quit_times--;
+                return;
+            }
+            write(STDOUT_FILENO, "\x1b[2J", 4);
+            write(STDOUT_FILENO, "\x1b[H", 3);
+            exit(0);
+            break;
+
+        case CTRL_KEY('s'):
+            editorSave();
+            break;
+
+        case HOME_KEY:
+            editor.cx = 0;
+            break;
+
+        case END_KEY:
+            if (editor.cy < editor.numrows) {
+                editor.cx = editor.row[editor.cy].size;
+            }
+            break;
+
+        case CTRL_KEY('f'):
+            editorFind();
+            break;
+
+        case PAGE_UP:
+        case PAGE_DOWN:
+            {
+                if (c == PAGE_UP) {
+                    editor.cy = editor.rowoff;
+                } else if (c == PAGE_DOWN) {
+                    editor.cy = editor.rowoff + editor.screenrows - 1;
+                    if (editor.cy > editor.numrows) editor.cy = editor.numrows;
+                }
+
+                int times = editor.screenrows;
+                while (times--) {
+                    editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
+                }
+            }
+            break;
+
+        case ARROW_UP:   // key movement cases
+        case ARROW_DOWN:
+        case ARROW_LEFT:
+        case ARROW_RIGHT:
+            editorMoveCursor(c);
+            break;
+
+        case 'i':
+        case 'I':
+        case 'a':
+        case 'A':
+        case 'o':
+        case 'O':
+            editorDoInsert(c);
+            break;
+
+        default:
+            editorMoveCursor(editorNormalMovement(c));
+            break;
+
+    }
+    quit_times = AETHERIS_QUIT_TIMES;
+
 }

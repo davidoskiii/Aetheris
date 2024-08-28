@@ -32,6 +32,7 @@ typedef struct editorConfig {
   time_t statusmsg_time;
   erow *row;
   int dirty;
+  int mode;
   int linenum_indent;
   struct editorSyntax *syntax;
   struct termios orig_termios;
@@ -61,6 +62,11 @@ enum editorHighlight {
   HL_STRING,
   HL_NUMBER,
   HL_MATCH
+};
+
+enum editorMode {
+  MODE_INSERT = 0,
+  MODE_NORMAL
 };
 
 struct editorSyntax {
