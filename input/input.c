@@ -309,6 +309,73 @@ void editorProcessKeypress() {
   quit_times = AETHERIS_QUIT_TIMES;
 }
 
+int isStopChr(int c, char *s) {
+  for (int i = 0; s[i] != '\0'; i += 1) {
+    if (c == s[i]) {
+      return 1;
+    } else if (c == '\0') {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+void editorSpecialMovement(int key) {
+  char *stopChars = " '\"\n()[].#<>";
+
+  switch (key) {
+    case 'w':
+      while (!isStopChr(editor.row[editor.cy].chars[editor.cx], stopChars)) {
+        editorMoveCursor(ARROW_RIGHT);
+        while (isStopChr(editor.row[editor.cy].chars[editor.cx + 1], stopChars)) {
+          editorMoveCursor(ARROW_RIGHT);
+        }
+      }
+      editorMoveCursor(ARROW_RIGHT);
+      break;
+    case 'b':
+      while (!isStopChr(editor.row[editor.cy].chars[editor.cx], stopChars)) {
+        editorMoveCursor(ARROW_LEFT);
+        while (isStopChr(editor.row[editor.cy].chars[editor.cx - 1], stopChars)) {
+          editorMoveCursor(ARROW_LEFT);
+        }
+      }
+      editorMoveCursor(ARROW_LEFT);
+      break;
+  
+    case '$': {
+      if (editor.cy < editor.numrows) editor.cx = editor.row[editor.cy].size;
+      editorMoveCursor(ARROW_LEFT);
+      break;
+    }
+
+    case '^': {
+      editor.cx = 0;
+      if (editor.row[editor.cy].chars[editor.cx] != ' ') break;
+      do {
+        editorMoveCursor(ARROW_RIGHT);
+      } while (editor.row[editor.cy].chars[editor.cx + 1] == ' ');
+      editorMoveCursor(ARROW_RIGHT);
+      break;
+    }
+
+    case '}':
+      editor.cx = 0;
+      editorMoveCursor(ARROW_DOWN);
+      while (editor.row[editor.cy].size != 0) {
+        editorMoveCursor(ARROW_DOWN);
+      }
+      break;
+    case '{':
+      editor.cx = 0;
+      editorMoveCursor(ARROW_UP);
+      while (editor.row[editor.cy].size != 0) {
+        editorMoveCursor(ARROW_UP);
+      }
+      break;
+  }
+}
+
 void editorNormalProcessKeypress() {
   static int quit_times = AETHERIS_QUIT_TIMES;
   int c = editorReadKey();
@@ -333,16 +400,20 @@ void editorNormalProcessKeypress() {
       break;
     }
 
+
     case 'w':
+    case 'b':
+    case '$':
+    case '^':
+    case '}':
+    case '{':
       for (int i = 0; i < count; i++) {
-        editorSkipWord();
+        editorSpecialMovement(c);
       }
       break;
 
-    case 'b':
-      for (int i = 0; i < count; i++) {
-        editorSkipWordBackward();
-      }
+    case 'p':
+      editorSetStatusMessage("char at %d = %d", editor.rx, editor.row[editor.cy].chars[editor.cx]);
       break;
 
     case CTRL_KEY('q'):

@@ -10,8 +10,6 @@ void editorQuitSafe(int quit_times);
 void editorOpen(char *filename);
 void editorSave();
 void editorFind();
-void editorSkipWord();
-void editorSkipWordBackward();
 
 char *editorRowsToString(int *buflen);
 
