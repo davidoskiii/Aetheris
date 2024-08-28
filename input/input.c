@@ -86,33 +86,48 @@ void editorInsertChar(int c) {
 }
 
 void editorDelChar() {
-  if (editor.cy == editor.numrows) return;
-  if (editor.cx == 0 && editor.cy == 0) return;
-  erow *row = &editor.row[editor.cy];
-  if (editor.cx > 0) {
-    editorRowDelChar(row, editor.cx - 1);
-    editor.cx--;
-  } else {
-    editor.cx = editor.row[editor.cy - 1].size;
-    editorRowAppendString(&editor.row[editor.cy - 1], row->chars, row->size);
-    editorDelRow(editor.cy);
-    editor.cy--;
-  }
+    if (editor.cy == editor.numrows) return;
+    if (editor.cx == 0 && editor.cy == 0) return;
+    erow* row = &(editor.row[editor.cy]);
+    if (editor.cx > 0) {
+      editorRowDelChar(row, editor.cx - 1);
+      editor.cx--;
+    } else {
+      editor.cx = editor.row[editor.cy - 1].size;
+      editorRowAppendString(&(editor.row[editor.cy - 1]), row->chars, row->size);
+      editorDelRow(editor.cy);
+      editor.cy--;
+    }
+    editor.sx = editorRowCxToRx(&(editor.row[editor.cy]), editor.cx);
 }
 
 void editorInsertNewline() {
+  int i = 0;
+
   if (editor.cx == 0) {
     editorInsertRow(editor.cy, "", 0);
   } else {
-    erow *row = &editor.row[editor.cy];
-    editorInsertRow(editor.cy + 1, &row->chars[editor.cx], row->size - editor.cx);
-    row = &editor.row[editor.cy];
-    row->size = editor.cx;
-    row->chars[row->size] = '\0';
-    editorUpdateRow(row);
+    editorInsertRow(editor.cy + 1, "", 0);
+    erow* curr_row = &(editor.row[editor.cy]);
+    erow* new_row = &(editor.row[editor.cy + 1]);
+
+    while (i < editor.cx && (curr_row->chars[i] == ' ' || curr_row->chars[i] == '\t'))
+      i++;
+    if (i != 0)
+      editorRowAppendString(new_row, curr_row->chars, i);
+    if (curr_row->chars[editor.cx - 1] == ':' ||
+      (curr_row->chars[editor.cx - 1] == '{' && curr_row->chars[editor.cx] != '}')) {
+      editorRowAppendString(new_row, "\t", 1);
+      i++;
+    }
+    editorRowAppendString(new_row, &(curr_row->chars[editor.cx]), curr_row->size - editor.cx);
+    curr_row->size = editor.cx;
+    curr_row->chars[curr_row->size] = '\0';
+    editorUpdateRow(curr_row);
   }
   editor.cy++;
-  editor.cx = 0;
+  editor.cx = i;
+  editor.sx = editorRowCxToRx(&(editor.row[editor.cy]), i);
 }
 
 void editorFreeRow(erow *row) {

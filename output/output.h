@@ -12,6 +12,7 @@ void editorInsertRow(int at, char *s, size_t len);
 void editorUpdateRow(erow *row);
 
 int editorRowRxToCx(erow *row, int rx);
+int editorRowCxToRx(erow *row, int cx);
 
 void editorRefreshScreen();
 void editorScroll();
