@@ -134,6 +134,7 @@ void editorFreeRow(erow *row) {
   free(row->render);
   free(row->chars);
   free(row->hl);
+  free(row->selected);
 }
 
 void editorDelRow(int at) {
@@ -196,34 +197,34 @@ int editorNormalMovement(int key) {
 void editorDoInsert(int key) {
   switch (key) {
     case 'i':
-      editor.mode = 0;
+      editor.mode = MODE_INSERT;
       break;
     case 'I': 
       editor.cx = 0;
-      editor.mode = 0;
+      editor.mode = MODE_INSERT;
       break;
     case 'a': 
       editorMoveCursor(ARROW_RIGHT);
-      editor.mode = 0;
+      editor.mode = MODE_INSERT;
       break;
     case 'A': 
       if (editor.cy < editor.numrows) {
         editor.cx = editor.row[editor.cy].size;
       }
-      editor.mode = 0;
+      editor.mode = MODE_INSERT;
       break;
     case 'o':
       if (editor.cy < editor.numrows) {
         editor.cx = editor.row[editor.cy].size;
       }
       editorInsertNewline();
-      editor.mode = 0;
+      editor.mode = MODE_INSERT;
       break;
     case 'O':
       editor.cx = 0;
       editorInsertNewline();
       editorMoveCursor(ARROW_UP);
-      editor.mode = 0;
+      editor.mode = MODE_INSERT;
       break;
   }
 }
@@ -252,19 +253,13 @@ void editorProcessKeypress() {
   int c = editorReadKey();
   switch (c) {
     case '\r':
+      if (editor.is_selected) {
+        editorDeleteSelectText();
+        editor.is_selected = 0;
+      }
       editorInsertNewline();
       break;
 
-    case CTRL_KEY('t'): {
-      char* command = editorPrompt("Type a command: %s (Esc to cancel)", NULL);
-      if (command == NULL) {
-        editorSetStatusMessage("Command aborted");
-        break;
-      }
-
-      editorProcessCommand(command, quit_times);
-      break;
-    }
     case CTRL_KEY('q'): {
       if (editor.dirty && quit_times > 0) {
         editorSetStatusMessage("WARNING!!! File has unsaved changes. "
@@ -284,21 +279,30 @@ void editorProcessKeypress() {
     case BACKSPACE:
     case CTRL_KEY('h'):
     case DEL_KEY:
+      if (editor.is_selected) {
+        editorDeleteSelectText();
+        editor.is_selected = 0;
+        break;
+      }
       if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
       editorDelChar();
       break;
 
     case '\x1b':
-      editor.mode = 1;
+      editor.mode = MODE_NORMAL;
+      editor.is_selected = 0;
       break;
 
     case HOME_KEY:
       editor.cx = 0;
+      editor.is_selected = 0;
       break;
     case END_KEY:
       if (editor.cy < editor.numrows) editor.cx = editor.row[editor.cy].size;
+      editor.is_selected = 0;
       break;
     case PAGE_UP: {
+      editor.is_selected = 0;
       if (c == PAGE_UP) {
         editor.cy = editor.rowoff;
       } else if (c == PAGE_DOWN) {
@@ -308,6 +312,7 @@ void editorProcessKeypress() {
     break;
     }
     case PAGE_DOWN: {
+      editor.is_selected = 0;
       int times = editor.screenrows;
       while (times--) editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
       break;
@@ -316,13 +321,46 @@ void editorProcessKeypress() {
     case ARROW_DOWN:
     case ARROW_LEFT:
     case ARROW_RIGHT:
+        if (editor.is_selected) {
+          int start_x, start_y, end_x, end_y;
+          getSelectStartEnd(&start_x, &start_y, &end_x, &end_y);
+
+          if (c == ARROW_UP || c == ARROW_LEFT) {
+            editor.cx = start_x;
+            editor.cy = start_y;
+          }
+          else {
+            editor.cx = end_x;
+            editor.cy = end_y;
+          }
+          editor.sx = editorRowCxToRx(&(editor.row[editor.cy]), editor.cx);
+          if (c == ARROW_UP || c == ARROW_DOWN) {
+            editorMoveCursor(c);
+          }
+          editor.is_selected = 0;
+        }
       editorMoveCursor(c);
       break;
 
     default:
-      editorInsertChar(c);
+      if (isprint(c) || c == '\t') {
+        if (editor.is_selected) {
+          editorDeleteSelectText();
+          editor.is_selected = 0;
+        } else {
+          editorInsertChar(c);
+        }
+        editor.sx = editorRowCxToRx(&(editor.row[editor.cy]), editor.cx);
+      }
+      editor.is_selected = 0;
       break;
   }
+
+  if (!editor.is_selected) {
+    editor.select_x = editor.cx;
+    editor.select_y = editor.cy;
+  }
+
   quit_times = AETHERIS_QUIT_TIMES;
 }
 
@@ -417,6 +455,139 @@ void editorNormalProcessKeypress() {
       break;
     }
 
+    case 'w':
+    case 'b':
+    case '$':
+    case '^':
+    case '}':
+    case '{':
+      for (int i = 0; i < count; i++) {
+        editorSpecialMovement(c);
+      }
+      break;
+
+    case 'p':
+      editorSetStatusMessage("char at %d = %d", editor.rx, editor.row[editor.cy].chars[editor.cx]);
+      break;
+
+    case CTRL_KEY('q'):
+      if (editor.dirty && quit_times > 0) {
+        editorSetStatusMessage("WARNING!!! File has unsaved changes. "
+                               "Press Ctrl-Q %d more times to quit.", quit_times);
+        quit_times--;
+        return;
+      }
+      write(STDOUT_FILENO, "\x1b[2J", 4);
+      write(STDOUT_FILENO, "\x1b[H", 3);
+      exit(0);
+      break;
+
+    case CTRL_KEY('s'):
+      editorSave();
+      break;
+
+    case HOME_KEY:
+      editor.cx = 0;
+      break;
+
+    case END_KEY:
+      if (editor.cy < editor.numrows) {
+        editor.cx = editor.row[editor.cy].size;
+      }
+      break;
+
+    case CTRL_KEY('f'):
+      editorFind();
+      break;
+
+    case PAGE_UP:
+    case PAGE_DOWN:
+      {
+        if (c == PAGE_UP) {
+          editor.cy = editor.rowoff;
+        } else if (c == PAGE_DOWN) {
+          editor.cy = editor.rowoff + editor.screenrows - 1;
+          if (editor.cy > editor.numrows) editor.cy = editor.numrows;
+        }
+
+        int times = editor.screenrows;
+        while (times--) {
+          editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
+        }
+      }
+      break;
+
+    case ARROW_UP:
+    case ARROW_DOWN:
+    case ARROW_LEFT:
+    case ARROW_RIGHT:
+      for (int i = 0; i < count; i++) {
+        editorMoveCursor(c);
+      }
+      break;
+
+
+    case 'v':
+      editor.select_x = editor.cx;
+      editor.select_y = editor.cy;
+      editor.mode = MODE_VISUAL;
+      editor.is_selected = 1;
+      break;
+
+    case 'i':
+    case 'I':
+    case 'a':
+    case 'A':
+    case 'o':
+    case 'O':
+      editorDoInsert(c);
+      break;
+
+    default:
+      editorMoveCursor(editorNormalMovement(c));
+      break;
+  }
+
+  quit_times = AETHERIS_QUIT_TIMES;
+}
+
+
+void editorVisualProcessKeypress() {
+  static int quit_times = AETHERIS_QUIT_TIMES;
+  int c = editorReadKey();
+  int count = 0;
+
+  while (c >= '0' && c <= '9') {
+    count = count * 10 + (c - '0');
+    c = editorReadKey();
+  }
+
+  if (count == 0) count = 1;
+
+  switch (c) {
+    case '\r':
+      if (editor.is_selected) {
+        editorDeleteSelectText();
+        editor.is_selected = 0;
+      }
+      editorInsertNewline();
+      break;
+
+    case ':': {
+      char* command = editorPrompt("Type a command: %s (Esc to cancel)", NULL);
+      if (command == NULL) {
+        editorSetStatusMessage("Command aborted");
+        break;
+      }
+
+      editorProcessCommand(command, quit_times);
+      break;
+    }
+
+    case '\x1b': 
+      editor.mode = MODE_NORMAL;
+      editor.is_selected = 0;
+      break;
 
     case 'w':
     case 'b':
@@ -461,6 +632,19 @@ void editorNormalProcessKeypress() {
 
     case CTRL_KEY('f'):
       editorFind();
+      break;
+
+    case 'd':
+    case BACKSPACE:
+    case CTRL_KEY('h'):
+    case DEL_KEY:
+      if (editor.is_selected) {
+        editorDeleteSelectText();
+        editor.is_selected = 0;
+        break;
+      }
+      if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
+      editorDelChar();
       break;
 
     case PAGE_UP:

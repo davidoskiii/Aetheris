@@ -14,7 +14,8 @@ typedef struct erow {
   int rsize;
   char *chars;
   char *render;
-  unsigned char *hl;
+  unsigned char* hl;
+  unsigned char* selected;
   int hl_open_comment;
 } erow;
 
@@ -33,6 +34,8 @@ typedef struct editorConfig {
   erow *row;
   int dirty;
   int mode;
+  int is_selected;
+  int select_y, select_x;
   int linenum_indent;
   struct editorSyntax *syntax;
   struct termios orig_termios;
@@ -66,7 +69,8 @@ enum editorHighlight {
 
 enum editorMode {
   MODE_INSERT = 0,
-  MODE_NORMAL
+  MODE_NORMAL,
+  MODE_VISUAL
 };
 
 struct editorSyntax {

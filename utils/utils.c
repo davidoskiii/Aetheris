@@ -166,6 +166,86 @@ void editorGotoLine(char* query) {
   }
 }
 
+void getSelectStartEnd(int* start_x, int* start_y, int* end_x, int* end_y) {
+  if (editor.select_y > editor.cy) {
+    *start_x = editor.cx;
+    *start_y = editor.cy;
+    *end_x = editor.select_x;
+    *end_y = editor.select_y;
+  }
+  else if (editor.select_y < editor.cy) {
+    *start_x = editor.select_x;
+    *start_y = editor.select_y;
+    *end_x = editor.cx;
+    *end_y = editor.cy;
+  }
+  else {
+    *start_y = *end_y = editor.cy;
+    *start_x = editor.select_x > editor.cx ? editor.cx : editor.select_x;
+    *end_x = editor.select_x > editor.cx ? editor.select_x : editor.cx;
+  }
+}
+
+void editorSelectText() {
+  if (!editor.is_selected)
+    return;
+  for (int i = 0; i < editor.numrows; i++) {
+    memset(editor.row[i].selected, 0, editor.row[i].rsize);
+  }
+  int start_x, start_y, end_x, end_y;
+  getSelectStartEnd(&start_x, &start_y, &end_x, &end_y);
+  start_x = editorRowCxToRx(&(editor.row[start_y]), start_x);
+  end_x = editorRowCxToRx(&(editor.row[end_y]), end_x);
+
+  if (start_y == end_y) {
+    memset(&(editor.row[editor.cy].selected[start_x]), 1, end_x - start_x);
+    return;
+  }
+
+  for (int i = start_y; i <= end_y; i++) {
+    if (i == start_y) {
+      memset(&(editor.row[i].selected[start_x]), 1, editor.row[i].rsize - start_x);
+    }
+    else if (i == end_y) {
+      memset(editor.row[i].selected, 1, end_x);
+    }
+    else {
+      memset(editor.row[i].selected, 1, editor.row[i].rsize);
+    }
+  }
+
+}
+
+void editorDeleteSelectText() {
+  int start_x, start_y, end_x, end_y;
+  getSelectStartEnd(&start_x, &start_y, &end_x, &end_y);
+  editor.cx = end_x;
+  editor.cy = end_y;
+  if (end_y - start_y > 1) {
+    for (int i = start_y + 1; i < end_y; i++) {
+      editorFreeRow(&(editor.row[i]));
+    }
+    int removed_rows = end_y - start_y - 1;
+    memmove(&(editor.row[start_y + 1]), &(editor.row[end_y]), sizeof(erow) * (editor.numrows - end_y));
+    for (int i = start_y + 1; i < editor.numrows - removed_rows; i++) {
+        editor.row[i].idx -= removed_rows;
+    }
+    editor.numrows -= removed_rows;
+    editor.cy -= removed_rows;
+    editor.dirty++;
+
+    int num_rows_digits = 0;
+    int num_rows = editor.numrows;
+    while (num_rows) {
+      num_rows /= 10;
+      num_rows_digits++;
+    }
+  }
+  while (editor.cy != start_y || editor.cx != start_x) {
+    editorDelChar();
+  }
+}
+
 void editorQuitSafe(int quit_times) {
   if (editor.dirty && quit_times > 0) {
     editorSetStatusMessage("WARNING!!! File has unsaved changes. "

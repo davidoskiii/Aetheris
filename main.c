@@ -21,7 +21,10 @@ void initEditor() {
   editor.numrows = 0;
   editor.row = NULL;
   editor.dirty = 0;
-  editor.mode = 1;
+  editor.mode = MODE_NORMAL;
+  editor.is_selected = 0;
+  editor.select_x = 0;
+  editor.select_y = 0;
   editor.linenum_indent = 6;
   editor.filename = NULL;
   editor.statusmsg[0] = '\0';
@@ -47,6 +50,8 @@ int main(int argc, char *argv[]) {
     editorRefreshScreen();
     if (editor.mode == MODE_NORMAL) {
       editorNormalProcessKeypress();
+    } else if (editor.mode == MODE_VISUAL) {
+      editorVisualProcessKeypress();
     } else {
       editorProcessKeypress();
     }

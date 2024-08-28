@@ -6,6 +6,7 @@
 #include "output.h"
 
 #include "../syntax/syntax.h"
+#include "../utils/utils.h"
 
 struct abuf {
   char *b;
@@ -31,8 +32,15 @@ void editorDrawStatusBar(struct abuf *ab) {
   editor.screencols += editor.linenum_indent;
   abAppend(ab, "\x1b[7m", 4);
   char status[80], rstatus[80];
-  int len = snprintf(status, sizeof(status), " %s | %.20s - %d lines %s",
-        editor.mode ? "NORMAL" : "INSERT", 
+  char* mode;
+  if (editor.mode == MODE_NORMAL) {
+    mode = "NORMAL";
+  } else if (editor.mode == MODE_INSERT) {
+    mode = "INSERT";
+  } else if (editor.mode == MODE_VISUAL) {
+    mode = "VISUAL";
+  }
+  int len = snprintf(status, sizeof(status), " %s | %.20s - %d lines %s", mode, 
         editor.filename ? editor.filename : "[No Name]", 
         editor.numrows, editor.dirty ? "(modified)" : "");
   int rlen = snprintf(rstatus, sizeof(rstatus), "%s | %d/%d",
@@ -68,8 +76,9 @@ void editorDrawMessageBar(struct abuf *ab) {
 }
 
 void editorDrawRows(struct abuf *ab) {
-  int y;
+  editorSelectText();
 
+  int y;
   for (y = 0; y < editor.screenrows; y++) {
     int filerow = y + editor.rowoff;
 
@@ -106,6 +115,7 @@ void editorDrawRows(struct abuf *ab) {
       if (len > editor.screencols) len = editor.screencols;
       char *c = &editor.row[filerow].render[editor.coloff];
       unsigned char *hl = &editor.row[filerow].hl[editor.coloff];
+      unsigned char* selected = &(editor.row[filerow].selected[editor.coloff]);
       int current_color = -1;
       int j;
       for (j = 0; j < len; j++) {
@@ -119,6 +129,11 @@ void editorDrawRows(struct abuf *ab) {
             int clen = snprintf(buf, sizeof(buf), "\x1b[%dm", current_color);
             abAppend(ab, buf, clen);
           }
+        } else if (editor.is_selected && selected[j]) {
+          current_color = -2;
+          abAppend(ab, "\x1b[30;47m", 8);
+          abAppend(ab, &c[j], 1);
+          abAppend(ab, "\x1b[m", 3);
         } else if (hl[j] == HL_NORMAL) {
           if (current_color != -1) {
             abAppend(ab, "\x1b[39m", 5);
@@ -186,6 +201,7 @@ void editorInsertRow(int at, char *s, size_t len) {
   editor.row[at].rsize = 0;
   editor.row[at].render = NULL;
   editor.row[at].hl = NULL;
+  editor.row[at].selected = NULL;
   editor.row[at].hl_open_comment = 0;
   editorUpdateRow(&editor.row[at]);
 
@@ -242,10 +258,10 @@ void editorRefreshScreen() {
 
   abAppend(&ab, "\x1b[?25l", 6);
 
-  if (editor.mode == 0) {
+  if (editor.mode == MODE_INSERT) {
     // Insert mode: Change to vertical bar
     abAppend(&ab, "\x1b[6 q", 5);
-  } else if (editor.mode == 1) {
+  } else if (editor.mode == MODE_NORMAL) {
     // Normal mode: Change to block cursor
     abAppend(&ab, "\x1b[2 q", 5);
   }

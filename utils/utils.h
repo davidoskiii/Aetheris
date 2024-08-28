@@ -13,6 +13,10 @@ void editorSave();
 void editorFind();
 void editorGotoLine(char* query);
 
+void getSelectStartEnd(int* start_x, int* start_y, int* end_x, int* end_y);
+void editorDeleteSelectText();
+void editorSelectText();
+
 char *editorRowsToString(int *buflen);
 
 #endif

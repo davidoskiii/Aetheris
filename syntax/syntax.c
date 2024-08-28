@@ -36,6 +36,7 @@ int is_separator(int c) {
 
 void editorUpdateSyntax(erow *row) {
   row->hl = realloc(row->hl, row->rsize);
+  row->selected = realloc(row->selected, row->rsize);
   memset(row->hl, HL_NORMAL, row->rsize);
 
   if (editor.syntax == NULL) return;
@@ -216,7 +217,7 @@ int editorSyntaxToColor(int hl) {
 
     case HL_PAREN: return 91;
     case HL_FUNCTION: return 94;
-    case HL_KEYWORD: return 95;
+    case HL_KEYWORD: return 35;
     case HL_IDENTIFIER: return 93;
     case HL_STRING: return 92;
     case HL_NUMBER: return 93;
