@@ -155,45 +155,44 @@ void editorSave() {
   editorSetStatusMessage("Can't save! I/O error: %s", strerror(errno));
 }
 
-
 void editorSkipWord() {
-  // Move right until finding a non-whitespace character
   while (editor.cy < editor.numrows) {
-    while (editor.cx < editor.row[editor.cy].size && isspace(editor.row[editor.cy].chars[editor.cx])) {
-      editor.cx++;
-    }
-    // Now move until finding the next whitespace or end of the line
     while (editor.cx < editor.row[editor.cy].size && !isspace(editor.row[editor.cy].chars[editor.cx])) {
       editor.cx++;
     }
+    
+    while (editor.cx < editor.row[editor.cy].size && isspace(editor.row[editor.cy].chars[editor.cx])) {
+      editor.cx++;
+    }
 
-    // If we reached the end of the line, move to the start of the next line
     if (editor.cx >= editor.row[editor.cy].size) {
       editor.cy++;
       editor.cx = 0;
+
+      break;
     } else {
-      break;  // Stop if we've moved over a word
+      break;
     }
   }
 }
 
 void editorSkipWordBackward() {
-  // Move left until finding a non-whitespace character
   while (editor.cy >= 0) {
     while (editor.cx > 0 && isspace(editor.row[editor.cy].chars[editor.cx - 1])) {
       editor.cx--;
     }
-    // Now move left until finding the previous whitespace or start of the line
+
     while (editor.cx > 0 && !isspace(editor.row[editor.cy].chars[editor.cx - 1])) {
       editor.cx--;
     }
 
-    // If we reached the start of the line, move to the end of the previous line
     if (editor.cx == 0 && editor.cy > 0) {
       editor.cy--;
       editor.cx = editor.row[editor.cy].size;
+
+      break;
     } else {
-      break;  // Stop if we've moved over a word
+      break;
     }
   }
 }

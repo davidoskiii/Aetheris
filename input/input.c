@@ -271,7 +271,6 @@ void editorProcessKeypress() {
       editorDelChar();
       break;
 
-    case CTRL_KEY('l'):
     case '\x1b':
       editor.mode = 1;
       break;
