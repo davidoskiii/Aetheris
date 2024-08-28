@@ -28,6 +28,7 @@ void abFree(struct abuf *ab) {
 }
 
 void editorDrawStatusBar(struct abuf *ab) {
+  editor.screencols += editor.linenum_indent;
   abAppend(ab, "\x1b[7m", 4);
   char status[80], rstatus[80];
   int len = snprintf(status, sizeof(status), "%.20s - %d lines %s",
@@ -48,18 +49,19 @@ void editorDrawStatusBar(struct abuf *ab) {
   }
   abAppend(ab, "\x1b[m", 3);
   abAppend(ab, "\r\n", 2);
+  editor.screencols -= editor.linenum_indent;
 }
 
 void editorDrawMessageBar(struct abuf *ab) {
   abAppend(ab, "\x1b[K", 3);
   int msglen = strlen(editor.statusmsg);
-  if (msglen > editor.raw_screencols) msglen = editor.screencols;
+  if (msglen > editor.screencols) msglen = editor.screencols;
 
-  int padding = (editor.raw_screencols - msglen) / 2;
+  int padding = (editor.screencols - msglen) / 2;
 
   if (padding) padding--;
 
-  while (padding-- + editor.linenum_indent) abAppend(ab, " ", 1);
+  while (padding--) abAppend(ab, " ", 1);
 
   if (msglen && time(NULL) - editor.statusmsg_time < 5) abAppend(ab, editor.statusmsg, msglen);
 }
