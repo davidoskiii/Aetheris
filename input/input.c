@@ -311,78 +311,110 @@ void editorProcessKeypress() {
 }
 
 void editorNormalProcessKeypress() {
-    static int quit_times = AETHERIS_QUIT_TIMES;
-    int c = editorReadKey();
+  static int quit_times = AETHERIS_QUIT_TIMES;
+  int c = editorReadKey();
+  int count = 0;
 
-    switch (c) {
-        case CTRL_KEY('q'):
-            if (editor.dirty && quit_times > 0) {
-                editorSetStatusMessage("WARNING!!! File has unsaved changes. "
-          "Press Ctrl-Q %d more times to quit.", quit_times);
-                quit_times--;
-                return;
-            }
-            write(STDOUT_FILENO, "\x1b[2J", 4);
-            write(STDOUT_FILENO, "\x1b[H", 3);
-            exit(0);
-            break;
+  while (c >= '0' && c <= '9') {
+    count = count * 10 + (c - '0');
+    c = editorReadKey();
+  }
 
-        case CTRL_KEY('s'):
-            editorSave();
-            break;
+  if (count == 0) count = 1;
 
-        case HOME_KEY:
-            editor.cx = 0;
-            break;
+  switch (c) {
+    case ':': {
+      char* command = editorPrompt("Type a command: %s (Esc to cancel)", NULL);
+      if (command == NULL) {
+        editorSetStatusMessage("Command aborted");
+        break;
+      }
 
-        case END_KEY:
-            if (editor.cy < editor.numrows) {
-                editor.cx = editor.row[editor.cy].size;
-            }
-            break;
-
-        case CTRL_KEY('f'):
-            editorFind();
-            break;
-
-        case PAGE_UP:
-        case PAGE_DOWN:
-            {
-                if (c == PAGE_UP) {
-                    editor.cy = editor.rowoff;
-                } else if (c == PAGE_DOWN) {
-                    editor.cy = editor.rowoff + editor.screenrows - 1;
-                    if (editor.cy > editor.numrows) editor.cy = editor.numrows;
-                }
-
-                int times = editor.screenrows;
-                while (times--) {
-                    editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
-                }
-            }
-            break;
-
-        case ARROW_UP:   // key movement cases
-        case ARROW_DOWN:
-        case ARROW_LEFT:
-        case ARROW_RIGHT:
-            editorMoveCursor(c);
-            break;
-
-        case 'i':
-        case 'I':
-        case 'a':
-        case 'A':
-        case 'o':
-        case 'O':
-            editorDoInsert(c);
-            break;
-
-        default:
-            editorMoveCursor(editorNormalMovement(c));
-            break;
-
+      editorProcessCommand(command, quit_times);
+      break;
     }
-    quit_times = AETHERIS_QUIT_TIMES;
 
+    case 'w':
+      for (int i = 0; i < count; i++) {
+        editorSkipWord();
+      }
+      break;
+
+    case 'b':
+      for (int i = 0; i < count; i++) {
+        editorSkipWordBackward();
+      }
+      break;
+
+    case CTRL_KEY('q'):
+      if (editor.dirty && quit_times > 0) {
+        editorSetStatusMessage("WARNING!!! File has unsaved changes. "
+                               "Press Ctrl-Q %d more times to quit.", quit_times);
+        quit_times--;
+        return;
+      }
+      write(STDOUT_FILENO, "\x1b[2J", 4);
+      write(STDOUT_FILENO, "\x1b[H", 3);
+      exit(0);
+      break;
+
+    case CTRL_KEY('s'):
+      editorSave();
+      break;
+
+    case HOME_KEY:
+      editor.cx = 0;
+      break;
+
+    case END_KEY:
+      if (editor.cy < editor.numrows) {
+        editor.cx = editor.row[editor.cy].size;
+      }
+      break;
+
+    case CTRL_KEY('f'):
+      editorFind();
+      break;
+
+    case PAGE_UP:
+    case PAGE_DOWN:
+      {
+        if (c == PAGE_UP) {
+          editor.cy = editor.rowoff;
+        } else if (c == PAGE_DOWN) {
+          editor.cy = editor.rowoff + editor.screenrows - 1;
+          if (editor.cy > editor.numrows) editor.cy = editor.numrows;
+        }
+
+        int times = editor.screenrows;
+        while (times--) {
+          editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
+        }
+      }
+      break;
+
+    case ARROW_UP:
+    case ARROW_DOWN:
+    case ARROW_LEFT:
+    case ARROW_RIGHT:
+      for (int i = 0; i < count; i++) {
+        editorMoveCursor(c);
+      }
+      break;
+
+    case 'i':
+    case 'I':
+    case 'a':
+    case 'A':
+    case 'o':
+    case 'O':
+      editorDoInsert(c);
+      break;
+
+    default:
+      editorMoveCursor(editorNormalMovement(c));
+      break;
+  }
+
+  quit_times = AETHERIS_QUIT_TIMES;
 }
