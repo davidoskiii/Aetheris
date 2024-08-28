@@ -53,13 +53,13 @@ void editorDrawStatusBar(struct abuf *ab) {
 void editorDrawMessageBar(struct abuf *ab) {
   abAppend(ab, "\x1b[K", 3);
   int msglen = strlen(editor.statusmsg);
-  if (msglen > editor.screencols) msglen = editor.screencols;
+  if (msglen > editor.raw_screencols) msglen = editor.screencols;
 
-  int padding = (editor.screencols - msglen) / 2;
+  int padding = (editor.raw_screencols - msglen) / 2;
 
   if (padding) padding--;
 
-  while (padding--) abAppend(ab, " ", 1);
+  while (padding-- + editor.linenum_indent) abAppend(ab, " ", 1);
 
   if (msglen && time(NULL) - editor.statusmsg_time < 5) abAppend(ab, editor.statusmsg, msglen);
 }
@@ -69,6 +69,18 @@ void editorDrawRows(struct abuf *ab) {
 
   for (y = 0; y < editor.screenrows; y++) {
     int filerow = y + editor.rowoff;
+
+    char format[8];
+    char linenum[editor.linenum_indent + 1];
+
+    memset(linenum, ' ', editor.linenum_indent);
+    snprintf(format, 5, "%%%dd ", editor.linenum_indent - 1);
+
+    if (filerow < editor.numrows) {
+      snprintf(linenum, editor.linenum_indent + 1, format, filerow + 1);
+    }
+    abAppend(ab, linenum, editor.linenum_indent);
+
     if (filerow >= editor.numrows) {
       if (editor.numrows == 0 && y == editor.screenrows / 3) {
         char welcome[80];
@@ -201,7 +213,27 @@ int editorRowRxToCx(erow *row, int rx) {
   return cx;
 }
 
+void editorUpdateLinenumIndent() {
+  int digit;
+  int numrows = editor.numrows;
+
+  if (numrows == 0) {
+    digit = 0;
+    editor.linenum_indent = 2;
+    return;
+  }
+
+  digit = 1;
+  while (numrows >= 10) {
+    numrows = numrows / 10;
+    digit++;
+  }
+  editor.linenum_indent = digit + 2;
+}
+
 void editorRefreshScreen() {
+  editorUpdateLinenumIndent();
+  editor.screencols = editor.raw_screencols - editor.linenum_indent;
   editorScroll();
 
   struct abuf ab = ABUF_INIT;
@@ -214,7 +246,7 @@ void editorRefreshScreen() {
   editorDrawMessageBar(&ab);
 
   char buf[32];
-  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (editor.cy - editor.rowoff) + 1, (editor.rx - editor.coloff) + 1);
+  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", editor.cy - editor.rowoff + 1, editor.rx - editor.coloff + 1 + editor.linenum_indent);
   abAppend(&ab, buf, strlen(buf));
 
   abAppend(&ab, "\x1b[?25h", 6);

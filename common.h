@@ -25,12 +25,14 @@ typedef struct editorConfig {
   int coloff;
   int screenrows;
   int screencols;
+  int raw_screencols;
   int numrows;
   char *filename;
   char statusmsg[80];
   time_t statusmsg_time;
   erow *row;
   int dirty;
+  int linenum_indent;
   struct editorSyntax *syntax;
   struct termios orig_termios;
 } editorConfig;

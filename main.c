@@ -20,13 +20,15 @@ void initEditor() {
   editor.numrows = 0;
   editor.row = NULL;
   editor.dirty = 0;
+  editor.linenum_indent = 6;
   editor.filename = NULL;
   editor.statusmsg[0] = '\0';
   editor.statusmsg_time = 0;
   editor.syntax = NULL;
 
-  if (getWindowSize(&editor.screenrows, &editor.screencols) == -1) die("getWindowSize");
+  if (getWindowSize(&editor.screenrows, &editor.raw_screencols) == -1) die("getWindowSize");
   editor.screenrows -= 2;
+  editor.screencols -= editor.raw_screencols;
 }
 
 int main(int argc, char *argv[]) {
