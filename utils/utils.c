@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <limits.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <termios.h>
@@ -19,6 +20,34 @@ void die(const char *s) {
 
   perror(s);
   exit(1);
+}
+
+int is_integer(const char *str) {
+  if (str == NULL) {
+    return 0;
+  }
+  while (isspace((unsigned char)*str)) {
+    str++;
+  }
+  if (*str == '\0') {
+    return 0;
+  }
+  if (*str == '+' || *str == '-') {
+    str++;
+  }
+  if (!isdigit((unsigned char)*str)) {
+    return 0;
+  }
+  char *endptr;
+  errno = 0;
+  long value = strtol(str, &endptr, 10);
+  if (errno != 0 || *endptr != '\0') {
+    return 0;
+  }
+  if (value > (long)INT_MAX || value < (long)INT_MIN) {
+    return 0;
+  }
+  return 1;
 }
 
 void editorOpen(char *filename) {
@@ -111,6 +140,29 @@ void editorFind() {
     editor.cy = saved_cy;
     editor.coloff = saved_coloff;
     editor.rowoff = saved_rowoff;
+  }
+}
+
+void editorGotoLine(char* query) {
+  if (query == NULL) return;
+  int line = atoi(query);
+  if (line < 0) {
+    line = editor.numrows + 1 + line;
+  }
+
+  if (line > editor.numrows) {
+    editorSetStatusMessage("%d is bigger than file length (%d lines)", line, editor.numrows);
+    return;
+  }
+
+  if (line > 0 && line <= editor.numrows) {
+    editor.cx = 0;
+    editor.sx = 0;
+    editor.cy = line - 1;
+  }
+
+  if (query) {
+    free(query);
   }
 }
 

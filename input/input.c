@@ -228,7 +228,7 @@ void editorDoInsert(int key) {
   }
 }
 
-void editorProcessCommand(const char* command, int quit_times) {
+void editorProcessCommand(char* command, int quit_times) {
   if (strcmp(command, "w") == 0) {
     editorSave();
   }  else if (strcmp(command, "wq") == 0) {
@@ -240,6 +240,8 @@ void editorProcessCommand(const char* command, int quit_times) {
     editorQuitSafe(quit_times);
   } else if (strcmp(command, "q!") == 0) {
     editorQuit();
+  } else if (is_integer(command)) {
+    editorGotoLine(command);
   } else {
     editorSetStatusMessage("Unknown command '%s'", command);
   }

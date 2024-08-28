@@ -4,12 +4,14 @@
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 void die(const char *s);
+int is_integer(const char *str);
 
 void editorQuit();
 void editorQuitSafe(int quit_times);
 void editorOpen(char *filename);
 void editorSave();
 void editorFind();
+void editorGotoLine(char* query);
 
 char *editorRowsToString(int *buflen);
 
