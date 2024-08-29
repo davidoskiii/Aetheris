@@ -61,10 +61,12 @@ enum editorHighlight {
   HL_COMMENT,
   HL_MLCOMMENT,
   HL_KEYWORD,
+  HL_MACRO,
   HL_IDENTIFIER,
   HL_STRING,
   HL_NUMBER,
-  HL_MATCH
+  HL_MATCH,
+  HL_TYPE_COUNT
 };
 
 enum editorMode {

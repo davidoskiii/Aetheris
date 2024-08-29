@@ -151,7 +151,7 @@ void editorDrawRows(struct abuf *ab) {
           abAppend(ab, &c[j], 1);
         }
       }
-      abAppend(ab, "\x1b[39m", 5);
+      abAppend(ab, "\x1b[m", strlen("\xb1[m"));
     }
 
     abAppend(ab, "\x1b[K", 3);

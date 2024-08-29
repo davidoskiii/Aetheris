@@ -12,6 +12,5 @@ extern struct editorSyntax HLDB[];
 
 void editorUpdateSyntax(erow *row);
 void editorSelectSyntaxHighlight();
-int editorSyntaxToColor(int hl);
 
 #endif

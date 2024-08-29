@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include "terminal/terminal.h"
+#include "config/config.h"
 #include "input/input.h"
 #include "output/output.h"
 #include "utils/utils.h"
@@ -38,6 +39,7 @@ void initEditor() {
 
 int main(int argc, char *argv[]) {
   enableRawMode();
+  editorLoadConfig();
   initEditor();
 
   if (argc >= 2) {
