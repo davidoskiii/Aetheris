@@ -1,2 +1,2 @@
 main: main.c
-	$(CC) main.c utils/utils.c terminal/terminal.c input/input.c output/output.c -o aetheris -Wall -Wextra -pedantic
+	$(CC) main.c utils/utils.c terminal/terminal.c input/input.c output/output.c syntax/syntax.c -o aetheris -Wall -Wextra -pedantic
