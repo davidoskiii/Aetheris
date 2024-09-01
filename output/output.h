@@ -21,5 +21,6 @@ int editorRowCxToRx(erow *row, int cx);
 void editorRefreshScreen();
 void editorScroll();
 void editorSetStatusMessage(const char *fmt, ...);
+void editorClearStatusBar();
 
 #endif

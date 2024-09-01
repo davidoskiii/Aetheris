@@ -59,15 +59,24 @@ void editorDrawMessageBar(struct abuf *ab) {
   int cols = editor.screencols + editor.numrows_digits + 1;
   abufAppend(ab, "\x1b[K");
   int msglen = strlen(editor.statusmsg);
-  if (msglen > editor.screencols) msglen = editor.screencols;
+  if (msglen > cols) msglen = cols;
 
-  int padding = (editor.screencols - msglen) / 2;
+  int padding = (cols - msglen) / 2;
 
   if (padding) padding--;
 
-  while (padding--) abAppend(ab, " ", 1);
+  while (padding--) abufAppend(ab, " ");
 
-  if (msglen && time(NULL) - editor.statusmsg_time < 2) abAppend(ab, editor.statusmsg, msglen);
+  if (msglen)
+      abufAppendN(ab, editor.statusmsg, msglen);
+
+  padding = (cols - msglen) / 2;
+
+  if (padding) padding--;
+
+  while (padding--) abufAppend(ab, " ");
+
+  abufAppend(ab, "\r\n");
 }
 
 void editorDrawRows(struct abuf *ab) {
@@ -252,6 +261,7 @@ void editorRefreshScreen() {
   editorDrawRows(&ab);
   editorDrawStatusBar(&ab);
   editorDrawMessageBar(&ab);
+  editorClearStatusBar();
 
   char buf[32];
   snprintf(buf, sizeof(buf), "\x1b[%d;%dH", editor.cy - editor.rowoff + 1, (editor.rx - editor.coloff) + 1 + editor.numrows_digits + 1);
@@ -268,7 +278,10 @@ void editorSetStatusMessage(const char *fmt, ...) {
   va_start(ap, fmt);
   vsnprintf(editor.statusmsg, sizeof(editor.statusmsg), fmt, ap);
   va_end(ap);
-  editor.statusmsg_time = time(NULL);
+}
+
+void editorClearStatusBar() {
+  snprintf(editor.statusmsg, sizeof(editor.statusmsg), "");
 }
 
 void editorScroll() {
