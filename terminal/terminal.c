@@ -54,7 +54,7 @@ int editorReadKey() {
     }
 
   if (c == '\x1b') {
-    char seq[3];
+    char seq[5];
 
     if (read(STDIN_FILENO, &seq[0], 1) != 1) return '\x1b';
     if (read(STDIN_FILENO, &seq[1], 1) != 1) return '\x1b';
@@ -71,6 +71,25 @@ int editorReadKey() {
             case '6': return PAGE_DOWN;
             case '7': return HOME_KEY;
             case '8': return END_KEY;
+          }
+        } else if (seq[2] == ';') {
+          if (read(STDIN_FILENO, &seq[3], 1) != 1)
+            return '\x1b';
+          if (read(STDIN_FILENO, &seq[4], 1) != 1)
+            return '\x1b';
+          if (seq[1] == '1') {
+            if (seq[3] == '2') {
+              switch (seq[4]) {
+                case 'A':
+                  return SHIFT_UP;
+                case 'B':
+                  return SHIFT_DOWN;
+                case 'C':
+                  return SHIFT_RIGHT;
+                case 'D':
+                  return SHIFT_LEFT;
+              }
+            }
           }
         }
       } else {

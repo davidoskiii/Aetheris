@@ -512,9 +512,11 @@ void editorSpecialMovement(int key) {
   char *stopChars = " '\"\n()[].#<>";
 
   switch (key) {
+    case SHIFT_RIGHT:
     case 'w':
       editorMoveCursorWordForward();
       break;
+    case SHIFT_LEFT:
     case 'b':
       editorMoveCursorWordBackward();
       break;
@@ -592,6 +594,8 @@ void editorNormalProcessKeypress() {
     case '/':
     case '}':
     case '{':
+    case SHIFT_LEFT:
+    case SHIFT_RIGHT:
       for (int i = 0; i < count; i++) {
         editorSpecialMovement(c);
       }
@@ -728,6 +732,8 @@ void editorVisualProcessKeypress() {
     case '/':
     case '}':
     case '{':
+    case SHIFT_LEFT:
+    case SHIFT_RIGHT:
       for (int i = 0; i < count; i++) {
         editorSpecialMovement(c);
       }
