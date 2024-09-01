@@ -8,7 +8,9 @@ void editorMoveCursor(int key);
 void editorProcessKeypress();
 void editorNormalProcessKeypress();
 void editorVisualProcessKeypress();
+void editorVisualLineProcessKeypress();
 
+void editorInsertNewline();
 void editorRowAppendString(erow *row, char *s, size_t len);
 char *editorPrompt(char *prompt, void (*callback)(char *, int));
 void editorDelRow(int at);

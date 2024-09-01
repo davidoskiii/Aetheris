@@ -40,7 +40,10 @@ void editorDrawStatusBar(struct abuf *ab) {
     mode = "INSERT";
   } else if (editor.mode == MODE_VISUAL) {
     mode = "VISUAL";
+  } else if (editor.mode == MODE_VISUAL_LINE) {
+    mode = "V-LINE";
   }
+
   int len = snprintf(status, sizeof(status), " %s | %.20s - %d lines %s", mode, 
         editor.filename ? editor.filename : "[No Name]", 
         editor.numrows, editor.dirty ? "(modified)" : "");

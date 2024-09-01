@@ -331,6 +331,7 @@ void editorProcessKeypress() {
         quit_times--;
         return;
       }
+      editorFree();
       disableSwap();
       exit(0);
       break;
@@ -341,11 +342,6 @@ void editorProcessKeypress() {
     case BACKSPACE:
     case CTRL_KEY('h'):
     case DEL_KEY:
-      if (editor.is_selected) {
-        editorDeleteSelectText();
-        editor.is_selected = 0;
-        break;
-      }
       if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
       else if (editor.bracket_autocomplete &&
                (isCloseBracket(editor.row[editor.cy].chars[editor.cx]) ==
@@ -601,9 +597,34 @@ void editorNormalProcessKeypress() {
       }
       break;
 
-    case 'p':
-      editorSetStatusMessage("char at %d = %d", editor.rx, editor.row[editor.cy].chars[editor.cx]);
+    case 'y': {
+      editorCopySelectText();
+      editor.mode = MODE_NORMAL;
+      editor.is_selected = 0;
       break;
+    }
+
+    case 'p': {
+      if (count != 1) {
+        for (int i = 0; i < count; i++) {
+          if (editor.is_selected && editor.clipboard.size) {
+            editorDeleteSelectText();
+            editor.mode = MODE_NORMAL;
+            editor.is_selected = 0;
+          }
+          editorPasteText();
+          editorInsertNewline();
+        }
+      } else {
+        if (editor.is_selected && editor.clipboard.size) {
+          editorDeleteSelectText();
+          editor.mode = MODE_NORMAL;
+          editor.is_selected = 0;
+        }
+        editorPasteText();
+      }
+      break;
+    }
 
     case CTRL_KEY('q'):
       if (editor.dirty && quit_times > 0) {
@@ -612,6 +633,7 @@ void editorNormalProcessKeypress() {
         quit_times--;
         return;
       }
+      editorFree();
       disableSwap();
       exit(0);
       break;
@@ -666,6 +688,14 @@ void editorNormalProcessKeypress() {
       editor.select_y = editor.cy;
       editor.mode = MODE_VISUAL;
       editor.is_selected = 1;
+      break;
+
+    case 'V':
+      editor.select_x = 0;
+      editor.select_y = editor.cy;
+      editor.mode = MODE_VISUAL_LINE;
+      editor.is_selected = 1;
+      editor.cx = editor.row[editor.cy].size;
       break;
 
     case 'i':
@@ -739,9 +769,34 @@ void editorVisualProcessKeypress() {
       }
       break;
 
-    case 'p':
-      editorSetStatusMessage("char at %d = %d", editor.rx, editor.row[editor.cy].chars[editor.cx]);
+    case 'y': {
+      editorCopySelectText();
+      editor.mode = MODE_NORMAL;
+      editor.is_selected = 0;
       break;
+    }
+
+    case 'p': {
+      if (count != 1) {
+        for (int i = 0; i < count; i++) {
+          if (editor.is_selected && editor.clipboard.size) {
+            editorDeleteSelectText();
+            editor.mode = MODE_NORMAL;
+            editor.is_selected = 0;
+          }
+          editorPasteText();
+          editorInsertNewline();
+        }
+      } else {
+        if (editor.is_selected && editor.clipboard.size) {
+          editorDeleteSelectText();
+          editor.mode = MODE_NORMAL;
+          editor.is_selected = 0;
+        }
+        editorPasteText();
+      }
+      break;
+    }
 
     case CTRL_KEY('q'):
       if (editor.dirty && quit_times > 0) {
@@ -750,6 +805,7 @@ void editorVisualProcessKeypress() {
         quit_times--;
         return;
       }
+      editorFree();
       disableSwap();
       exit(0);
       break;
@@ -776,28 +832,10 @@ void editorVisualProcessKeypress() {
     case BACKSPACE:
     case CTRL_KEY('h'):
     case DEL_KEY:
+      editorCopySelectText();
       if (editor.is_selected) {
         editorDeleteSelectText();
         editor.is_selected = 0;
-        break;
-      }
-      if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
-      char deleted_char = editor.row[editor.cy].chars[editor.cx - 1];
-      editorDelChar();
-      if (deleted_char == ' ') {
-        int should_delete_tab = 1;
-        for (int i = 0; i < editor.cx; i++) {
-          if (!isspace(editor.row[editor.cy].chars[i])) {
-            should_delete_tab = 0;
-          }
-        }
-        if (should_delete_tab) {
-          int idx = editorRowCxToRx(&(editor.row[editor.cy]), editor.cx);
-          while (idx % editor.cfg->tab_size != 0) {
-            editorDelChar();
-            idx--;
-          }
-        }
       }
       break;
 
@@ -840,6 +878,175 @@ void editorVisualProcessKeypress() {
       editorMoveCursor(editorNormalMovement(c));
       break;
   }
+
+  quit_times = AETHERIS_QUIT_TIMES;
+}
+
+void editorVisualLineProcessKeypress() {
+  static int quit_times = AETHERIS_QUIT_TIMES;
+  int c = editorReadKey();
+  int count = 0;
+
+  while (c >= '0' && c <= '9') {
+    count = count * 10 + (c - '0');
+    c = editorReadKey();
+  }
+
+  if (count == 0) count = 1;
+
+  switch (c) {
+    case '\r':
+      if (editor.is_selected) {
+        editorDeleteSelectText();
+        editor.is_selected = 0;
+      }
+      editorInsertNewline();
+      break;
+
+    case ':': {
+      char* command = editorPrompt("Type a command: %s (Esc to cancel)", NULL);
+      if (command == NULL) {
+        editorSetStatusMessage("Command aborted");
+        break;
+      }
+
+      editorProcessCommand(command, quit_times);
+      break;
+    }
+
+    case '\x1b': 
+      editor.mode = MODE_NORMAL;
+      editor.is_selected = 0;
+      break;
+
+    case 'w':
+    case 'b':
+    case 'J':
+    case 'x':
+    case '$':
+    case '^':
+    case '/':
+    case '}':
+    case '{':
+    case SHIFT_LEFT:
+    case SHIFT_RIGHT:
+      for (int i = 0; i < count; i++) {
+        editorSpecialMovement(c);
+      }
+      break;
+
+    case 'y': {
+      editorCopySelectText();
+      editor.mode = MODE_NORMAL;
+      editor.is_selected = 0;
+      break;
+    }
+
+    case 'p': {
+      if (count != 1) {
+        for (int i = 0; i < count; i++) {
+          if (editor.is_selected && editor.clipboard.size) {
+            editorDeleteSelectText();
+            editor.mode = MODE_NORMAL;
+            editor.is_selected = 0;
+          }
+          editorPasteText();
+          editorInsertNewline();
+        }
+      } else {
+        if (editor.is_selected && editor.clipboard.size) {
+          editorDeleteSelectText();
+          editor.mode = MODE_NORMAL;
+          editor.is_selected = 0;
+        }
+        editorPasteText();
+      }
+      break;
+    }
+
+    case CTRL_KEY('q'):
+      if (editor.dirty && quit_times > 0) {
+        editorSetStatusMessage("WARNING!!! File has unsaved changes. "
+                               "Press Ctrl-Q %d more times to quit.", quit_times);
+        quit_times--;
+        return;
+      }
+      editorFree();
+      disableSwap();
+      exit(0);
+      break;
+
+    case CTRL_KEY('s'):
+      editorSave();
+      break;
+
+    case HOME_KEY:
+      editor.cx = 0;
+      break;
+
+    case END_KEY:
+      if (editor.cy < editor.numrows) {
+        editor.cx = editor.row[editor.cy].size;
+      }
+      break;
+
+    case CTRL_KEY('f'):
+      editorFind();
+      break;
+
+    case 'd':
+    case BACKSPACE:
+    case CTRL_KEY('h'):
+    case DEL_KEY:
+      editorCopySelectText();
+      if (editor.is_selected) {
+        editorDeleteSelectText();
+        editor.is_selected = 0;
+      }
+      break;
+
+    case PAGE_UP:
+    case PAGE_DOWN:
+      {
+        if (c == PAGE_UP) {
+          editor.cy = editor.rowoff;
+        } else if (c == PAGE_DOWN) {
+          editor.cy = editor.rowoff + editor.screenrows - 1;
+          if (editor.cy > editor.numrows) editor.cy = editor.numrows;
+        }
+
+        int times = editor.screenrows;
+        while (times--) {
+          editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
+        }
+      }
+      break;
+
+    case ARROW_UP:
+    case ARROW_DOWN:
+    case ARROW_LEFT:
+    case ARROW_RIGHT:
+      for (int i = 0; i < count; i++) {
+        editorMoveCursor(c);
+      }
+      break;
+
+    case 'i':
+    case 'I':
+    case 'a':
+    case 'A':
+    case 'o':
+    case 'O':
+      editorDoInsert(c);
+      break;
+
+    default:
+      editorMoveCursor(editorNormalMovement(c));
+      break;
+  }
+
+  editor.select_x = 0;
+  editor.cx = editor.row[editor.cy].size;
 
   quit_times = AETHERIS_QUIT_TIMES;
 }

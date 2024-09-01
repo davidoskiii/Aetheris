@@ -32,6 +32,8 @@ void initEditor() {
   editor.statusmsg[0] = '\0';
   editor.statusmsg_time = 0;
   editor.syntax = NULL;
+  editor.clipboard.size = 0;
+  editor.clipboard.chars = NULL;
 
   if (getWindowSize(&editor.screenrows, &editor.screencols) == -1) die("getWindowSize");
   editor.screenrows -= 3;
@@ -61,6 +63,8 @@ int main(int argc, char *argv[]) {
       editorNormalProcessKeypress();
     } else if (editor.mode == MODE_VISUAL) {
       editorVisualProcessKeypress();
+    } else if (editor.mode == MODE_VISUAL_LINE) {
+      editorVisualLineProcessKeypress();
     } else {
       editorProcessKeypress();
     }

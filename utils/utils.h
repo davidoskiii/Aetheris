@@ -13,6 +13,7 @@ typedef struct Color {
 void die(const char *s);
 int is_integer(const char *str);
 
+void editorFree();
 void editorQuit();
 void editorQuitSafe(int quit_times);
 void editorOpen(char *filename);

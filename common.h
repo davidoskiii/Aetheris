@@ -9,6 +9,8 @@
 #include <time.h>
 #include <termios.h>
 
+#include "select/select.h"
+
 typedef struct ConfigSettings ConfigSettings;
 
 typedef struct erow {
@@ -57,6 +59,7 @@ typedef struct editorConfig {
   int is_selected;
   int select_y, select_x;
   int bracket_autocomplete;
+  EditorClipboard clipboard;
   ConfigSettings *cfg;
   struct editorSyntax *syntax;
   struct termios orig_termios;
@@ -65,7 +68,8 @@ typedef struct editorConfig {
 enum editorMode {
   MODE_INSERT = 0,
   MODE_NORMAL,
-  MODE_VISUAL
+  MODE_VISUAL,
+  MODE_VISUAL_LINE
 };
 
 struct editorSyntax {
