@@ -89,8 +89,17 @@ void editorInsertChar(int c) {
   if (editor.cy == editor.numrows) {
     editorInsertRow(editor.numrows, "", 0);
   }
-  editorRowInsertChar(&editor.row[editor.cy], editor.cx, c);
-  editor.cx++;
+  if (c == '\t' && editor.cfg->whitespace) {
+    int idx = editorRowCxToRx(&(editor.row[editor.cy]), editor.cx) + 1;
+    editorInsertChar(' ');
+    while (idx % editor.cfg->tab_size != 0) {
+      editorInsertChar(' ');
+      idx++;
+    }
+  } else {
+    editorRowInsertChar(&(editor.row[editor.cy]), editor.cx, c);
+    editor.cx++;
+  }
 }
 
 void editorDelChar() {
@@ -125,8 +134,12 @@ void editorInsertNewline() {
       editorRowAppendString(new_row, curr_row->chars, i);
     if (curr_row->chars[editor.cx - 1] == ':' ||
       (curr_row->chars[editor.cx - 1] == '{' && curr_row->chars[editor.cx] != '}')) {
-      editorRowAppendString(new_row, "\t", 1);
-      i++;
+      if (editor.cfg->whitespace) {
+        for (int j = 0; j < editor.cfg->tab_size; j++, i++) editorRowAppendString(new_row, " ", 1);
+      } else {
+        editorRowAppendString(new_row, "\t", 1);
+        i++;
+      }
     }
     editorRowAppendString(new_row, &(curr_row->chars[editor.cx]), curr_row->size - editor.cx);
     curr_row->size = editor.cx;
@@ -663,7 +676,23 @@ void editorVisualProcessKeypress() {
         break;
       }
       if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
+      char deleted_char = editor.row[editor.cy].chars[editor.cx - 1];
       editorDelChar();
+      if (deleted_char == ' ') {
+        int should_delete_tab = 1;
+        for (int i = 0; i < editor.cx; i++) {
+          if (!isspace(editor.row[editor.cy].chars[i])) {
+            should_delete_tab = 0;
+          }
+        }
+        if (should_delete_tab) {
+          int idx = editorRowCxToRx(&(editor.row[editor.cy]), editor.cx);
+          while (idx % editor.cfg->tab_size != 0) {
+            editorDelChar();
+            idx--;
+          }
+        }
+      }
       break;
 
     case PAGE_UP:

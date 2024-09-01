@@ -9,6 +9,7 @@
 #include "../output/output.h"
 
 static ConfigSettings cfg = {.tab_size = 4,
+                           .whitespace = 0,
                            .status_color = {{00, 00, 00}, {255, 255, 255}},
                            .highlight_color = {{212, 212, 212},
                                                {106, 153, 85},
@@ -42,6 +43,12 @@ static int parseLine(char* line, int verbose) {
     if (size < 1)
       return 0;
     editor.cfg->tab_size = size;
+  } else if (strcmp(argv[0], "whitespace") == 0) {
+    if (argc != 2) {
+      if (verbose) editorSetStatusMessage("Usage: whitespace [0|1]");
+      return 0;
+    }
+    editor.cfg->whitespace = atoi(argv[1]);
   } else if (strcmp(argv[0], "color") == 0) {
     if (argc != 3) {
       if (verbose)

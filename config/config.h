@@ -27,6 +27,7 @@ enum editorHighlight {
 
 typedef struct ConfigSettings {
   int tab_size;
+  int whitespace;
   Color status_color[2];
   Color highlight_color[HL_TYPE_COUNT];
 } ConfigSettings;
