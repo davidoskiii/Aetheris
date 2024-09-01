@@ -9,7 +9,7 @@
 #include "../output/output.h"
 
 static ConfigSettings cfg = {.tab_size = 4,
-                           .status_color = {{229, 229, 229}, {96, 59, 116}},
+                           .status_color = {{00, 00, 00}, {255, 255, 255}},
                            .highlight_color = {{212, 212, 212},
                                                {106, 153, 85},
                                                {106, 153, 85},
@@ -60,6 +60,10 @@ static int parseLine(char* line, int verbose) {
         editor.cfg->highlight_color[HL_MLCOMMENT] = color;
     } else if (strcmp(argv[1], "hl.keyword") == 0) {
         editor.cfg->highlight_color[HL_KEYWORD] = color;
+    } else if (strcmp(argv[1], "hl.identifier") == 0) {
+        editor.cfg->highlight_color[HL_IDENTIFIER] = color;
+    } else if (strcmp(argv[1], "hl.parentheses") == 0) {
+        editor.cfg->highlight_color[HL_PAREN] = color;
     } else if (strcmp(argv[1], "hl.macro") == 0) {
         editor.cfg->highlight_color[HL_MACRO] = color;
     } else if (strcmp(argv[1], "hl.function") == 0) {

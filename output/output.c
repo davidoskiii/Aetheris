@@ -26,7 +26,12 @@ void abFree(struct abuf *ab) {
 
 void editorDrawStatusBar(struct abuf *ab) {
   int cols = editor.screencols + editor.numrows_digits + 1;
-  abAppend(ab, "\x1b[7m", 4);
+  char color[20];
+  colorToANSI(editor.cfg->status_color[0], color, 0);
+  abufAppend(ab, color);
+  colorToANSI(editor.cfg->status_color[1], color, 1);
+  abufAppend(ab, color);
+
   char status[80], rstatus[80];
   char* mode;
   if (editor.mode == MODE_NORMAL) {

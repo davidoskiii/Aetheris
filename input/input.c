@@ -418,6 +418,7 @@ void editorSpecialMovement(int key) {
     case '$':
       if (editor.cy < editor.numrows)
         editor.cx = editor.row[editor.cy].size;  // move to end of the line
+      editorMoveCursor(ARROW_LEFT);
       break;
     case '^':
       editor.cx = 0;
