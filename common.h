@@ -1,3 +1,4 @@
+#pragma once
 #ifndef caetheris_common_h
 #define caetheris_common_h
 
@@ -7,6 +8,8 @@
 
 #include <time.h>
 #include <termios.h>
+
+typedef struct ConfigSettings ConfigSettings;
 
 typedef struct erow {
   int idx;
@@ -18,28 +21,6 @@ typedef struct erow {
   unsigned char* selected;
   int hl_open_comment;
 } erow;
-
-typedef struct editorConfig {
-  int cx, cy;
-  int rx, sx;
-  int rowoff;
-  int coloff;
-  int screenrows;
-  int screencols;
-  int raw_screencols;
-  int numrows;
-  char *filename;
-  char statusmsg[80];
-  time_t statusmsg_time;
-  erow *row;
-  int dirty;
-  int mode;
-  int is_selected;
-  int select_y, select_x;
-  int linenum_indent;
-  struct editorSyntax *syntax;
-  struct termios orig_termios;
-} editorConfig;
 
 enum editorKey {
   BACKSPACE = 127,
@@ -54,20 +35,27 @@ enum editorKey {
   PAGE_DOWN
 };
 
-enum editorHighlight {
-  HL_NORMAL = 0,
-  HL_PAREN,
-  HL_FUNCTION,
-  HL_COMMENT,
-  HL_MLCOMMENT,
-  HL_KEYWORD,
-  HL_MACRO,
-  HL_IDENTIFIER,
-  HL_STRING,
-  HL_NUMBER,
-  HL_MATCH,
-  HL_TYPE_COUNT
-};
+typedef struct editorConfig {
+  int cx, cy;
+  int rx, sx;
+  int rowoff;
+  int coloff;
+  int screenrows;
+  int screencols;
+  int numrows_digits;
+  int numrows;
+  char *filename;
+  char statusmsg[80];
+  time_t statusmsg_time;
+  erow *row;
+  int dirty;
+  int mode;
+  int is_selected;
+  int select_y, select_x;
+  ConfigSettings *cfg;
+  struct editorSyntax *syntax;
+  struct termios orig_termios;
+} editorConfig;
 
 enum editorMode {
   MODE_INSERT = 0,
@@ -91,7 +79,6 @@ struct editorSyntax {
 extern editorConfig editor;
 
 #define AETHERIS_VERSION "0.0.1"
-#define AETHERIS_TAB_STOP 8
 #define AETHERIS_QUIT_TIMES 3
 
 #endif

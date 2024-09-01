@@ -20,21 +20,20 @@ void initEditor() {
   editor.rowoff = 0;
   editor.coloff = 0;
   editor.numrows = 0;
+  editor.numrows_digits = 0;
   editor.row = NULL;
   editor.dirty = 0;
   editor.mode = MODE_NORMAL;
   editor.is_selected = 0;
   editor.select_x = 0;
   editor.select_y = 0;
-  editor.linenum_indent = 6;
   editor.filename = NULL;
   editor.statusmsg[0] = '\0';
   editor.statusmsg_time = 0;
   editor.syntax = NULL;
 
-  if (getWindowSize(&editor.screenrows, &editor.raw_screencols) == -1) die("getWindowSize");
-  editor.screenrows -= 2;
-  editor.screencols -= editor.raw_screencols;
+  if (getWindowSize(&editor.screenrows, &editor.screencols) == -1) die("getWindowSize");
+  editor.screenrows -= 3;
 }
 
 int main(int argc, char *argv[]) {
@@ -44,7 +43,12 @@ int main(int argc, char *argv[]) {
 
   if (argc >= 2) {
     editorOpen(argv[1]);
+  } else {
+    editorInsertRow(editor.cy, "", 0);
+    editor.dirty = 0;
   }
+
+  editor.screencols -= editor.numrows_digits + 1;
 
   editorSetStatusMessage("HELP: Ctrl-Q = quit | Ctrl-S = save | Ctrl-F  = find");
 

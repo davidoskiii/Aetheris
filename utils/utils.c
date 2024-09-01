@@ -12,7 +12,19 @@
 #include "../output/output.h"
 #include "../syntax/syntax.h"
 #include "../input/input.h"
+#include "../config/config.h"
 #include "../common.h"
+
+void abufAppend(abuf* ab, const char* s) { abufAppendN(ab, s, strlen(s)); }
+
+void abufAppendN(abuf* ab, const char* s, size_t n) {
+  char* new = realloc(ab->b, ab->len + n);
+
+  if (new == NULL) return;
+  memcpy(&new[ab->len], s, n);
+  ab->b = new;
+  ab->len += n;
+}
 
 void die(const char *s) {
   write(STDOUT_FILENO, "\x1b[2J", 4);
@@ -234,11 +246,11 @@ void editorDeleteSelectText() {
     editor.cy -= removed_rows;
     editor.dirty++;
 
-    int num_rows_digits = 0;
+    editor.numrows_digits = 0;
     int num_rows = editor.numrows;
     while (num_rows) {
       num_rows /= 10;
-      num_rows_digits++;
+      editor.numrows_digits++;
     }
   }
   while (editor.cy != start_y || editor.cx != start_x) {
@@ -302,4 +314,33 @@ char *editorRowsToString(int *buflen) {
     p++;
   }
   return buf;
+}
+
+static int isValidColor(const char* color) {
+  if (strlen(color) != 6) return 0;
+  for (int i = 0; i < 6; i++) {
+    if (!(('0' <= color[i]) || (color[i] <= '9') || ('A' <= color[i]) ||
+        (color[i] <= 'F') || ('a' <= color[i]) || (color[i] <= 'f')))
+      return 0;
+  }
+  return 1;
+}
+
+Color strToColor(const char* color) {
+  Color result = {0, 0, 0};
+  if (!isValidColor(color))
+    return result;
+  int shift = 16;
+  unsigned int hex = strtoul(color, NULL, 16);
+  result.r = (hex >> shift) & 0xff;
+  shift -= 8;
+  result.g = (hex >> shift) & 0xff;
+  shift -= 8;
+  result.b = (hex >> shift) & 0xff;
+  return result;
+}
+
+int colorToANSI(Color color, char ansi[20], int is_bg) {
+  return snprintf(ansi, 20, "\x1b[%d;2;%d;%d;%dm", is_bg ? 48 : 38, color.r,
+                  color.g, color.b);
 }

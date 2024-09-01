@@ -7,11 +7,7 @@
 
 #include "../syntax/syntax.h"
 #include "../utils/utils.h"
-
-struct abuf {
-  char *b;
-  int len;
-};
+#include "../config/config.h"
 
 #define ABUF_INIT {NULL, 0}
 
@@ -29,7 +25,7 @@ void abFree(struct abuf *ab) {
 }
 
 void editorDrawStatusBar(struct abuf *ab) {
-  editor.screencols += editor.linenum_indent;
+  int cols = editor.screencols + editor.numrows_digits + 1;
   abAppend(ab, "\x1b[7m", 4);
   char status[80], rstatus[80];
   char* mode;
@@ -45,10 +41,10 @@ void editorDrawStatusBar(struct abuf *ab) {
         editor.numrows, editor.dirty ? "(modified)" : "");
   int rlen = snprintf(rstatus, sizeof(rstatus), "%s | %d/%d",
     editor.syntax ? editor.syntax->filetype : "no ft", editor.cy + 1, editor.numrows);
-  if (len > editor.screencols) len = editor.screencols;
+  if (len > cols) len = cols;
   abAppend(ab, status, len);
-  while (len < editor.screencols) {
-    if (editor.screencols - len == rlen) {
+  while (len < cols) {
+    if (cols - len == rlen) {
       abAppend(ab, rstatus, rlen);
       break;
     } else {
@@ -56,13 +52,12 @@ void editorDrawStatusBar(struct abuf *ab) {
       len++;
     }
   }
-  abAppend(ab, "\x1b[m", 3);
-  abAppend(ab, "\r\n", 2);
-  editor.screencols -= editor.linenum_indent;
+  abufAppend(ab, ANSI_CLEAR);
 }
 
 void editorDrawMessageBar(struct abuf *ab) {
-  abAppend(ab, "\x1b[K", 3);
+  int cols = editor.screencols + editor.numrows_digits + 1;
+  abufAppend(ab, "\x1b[K");
   int msglen = strlen(editor.statusmsg);
   if (msglen > editor.screencols) msglen = editor.screencols;
 
@@ -72,7 +67,7 @@ void editorDrawMessageBar(struct abuf *ab) {
 
   while (padding--) abAppend(ab, " ", 1);
 
-  if (msglen && time(NULL) - editor.statusmsg_time < 5) abAppend(ab, editor.statusmsg, msglen);
+  if (msglen && time(NULL) - editor.statusmsg_time < 2) abAppend(ab, editor.statusmsg, msglen);
 }
 
 void editorDrawRows(struct abuf *ab) {
@@ -81,18 +76,6 @@ void editorDrawRows(struct abuf *ab) {
   int y;
   for (y = 0; y < editor.screenrows; y++) {
     int filerow = y + editor.rowoff;
-
-    char format[8];
-    char linenum[editor.linenum_indent + 1];
-
-    memset(linenum, ' ', editor.linenum_indent);
-    snprintf(format, 5, "%%%dd ", editor.linenum_indent - 1);
-
-    if (filerow < editor.numrows) {
-      snprintf(linenum, editor.linenum_indent + 1, format, filerow + 1);
-    }
-    abAppend(ab, linenum, editor.linenum_indent);
-
     if (filerow >= editor.numrows) {
       if (editor.numrows == 0 && y == editor.screenrows / 3) {
         char welcome[80];
@@ -101,57 +84,67 @@ void editorDrawRows(struct abuf *ab) {
         if (welcomelen > editor.screencols) welcomelen = editor.screencols;
         int padding = (editor.screencols - welcomelen) / 2;
         if (padding) {
-          abAppend(ab, "~", 1);
+          abufAppend(ab, "~");
           padding--;
         }
-        while (padding--) abAppend(ab, " ", 1);
-        abAppend(ab, welcome, welcomelen);
+        while (padding--) abufAppendN(ab, " ", 1);
+        abufAppendN(ab, welcome, welcomelen);
       } else {
-        abAppend(ab, "~", 1);
+        abufAppend(ab, "~");
       }
     } else {
+      char line_number[16];
+      if (filerow == editor.cy) {
+        abufAppend(ab, "\x1b[30;100m");
+      } else {
+        abufAppend(ab, "\x1b[90m");
+      }
+      snprintf(line_number, sizeof(line_number), "%*d ",
+             editor.numrows_digits, filerow + 1);
+      abufAppend(ab, line_number);
+      abufAppend(ab, ANSI_CLEAR);
       int len = editor.row[filerow].rsize - editor.coloff;
       if (len < 0) len = 0;
       if (len > editor.screencols) len = editor.screencols;
       char *c = &editor.row[filerow].render[editor.coloff];
       unsigned char *hl = &editor.row[filerow].hl[editor.coloff];
       unsigned char* selected = &(editor.row[filerow].selected[editor.coloff]);
-      int current_color = -1;
+      int current_color = 0;
       int j;
       for (j = 0; j < len; j++) {
         if (iscntrl(c[j])) {
           char sym = (c[j] <= 26) ? '@' + c[j] : '?';
-          abAppend(ab, "\x1b[7m", 4);
-          abAppend(ab, &sym, 1);
-          abAppend(ab, "\x1b[m", 3);
-          if (current_color != -1) {
-            char buf[16];
-            int clen = snprintf(buf, sizeof(buf), "\x1b[%dm", current_color);
-            abAppend(ab, buf, clen);
+          abufAppend(ab, ANSI_INVERT);
+          abufAppendN(ab, &sym, 1);
+          abufAppend(ab, ANSI_CLEAR);
+          if (current_color >= 0) {
+            char buf[20];
+            colorToANSI(editor.cfg->highlight_color[current_color], buf, 0);
+            abufAppend(ab, buf);
           }
         } else if (editor.is_selected && selected[j]) {
-          current_color = -2;
-          abAppend(ab, "\x1b[30;47m", 8);
-          abAppend(ab, &c[j], 1);
-          abAppend(ab, "\x1b[m", 3);
-        } else if (hl[j] == HL_NORMAL) {
           if (current_color != -1) {
-            abAppend(ab, "\x1b[39m", 5);
             current_color = -1;
+            abufAppend(ab, ANSI_CLEAR);
+            char buf[20];
+            colorToANSI(editor.cfg->highlight_color[0], buf, 0);
+            abufAppend(ab, ANSI_INVERT);
+            abufAppend(ab, buf);
           }
-          abAppend(ab, &c[j], 1);
+          abufAppendN(ab, &c[j], 1);
         } else {
-          int color = editorSyntaxToColor(hl[j]);
+          int color = hl[j];
           if (color != current_color) {
             current_color = color;
-            char buf[16];
-            int clen = snprintf(buf, sizeof(buf), "\x1b[%dm", color);
-            abAppend(ab, buf, clen);
+            abufAppend(ab, ANSI_CLEAR);
+            char buf[20];
+            colorToANSI(editor.cfg->highlight_color[color], buf, 0);
+            abufAppend(ab, buf);
           }
-          abAppend(ab, &c[j], 1);
+          abufAppendN(ab, &c[j], 1);
         }
       }
-      abAppend(ab, "\x1b[m", strlen("\xb1[m"));
+      abufAppend(ab, ANSI_CLEAR);
     }
 
     abAppend(ab, "\x1b[K", 3);
@@ -167,13 +160,13 @@ void editorUpdateRow(erow *row) {
   for (j = 0; j < row->size; j++) if (row->chars[j] == '\t') tabs++;
 
   free(row->render);
-  row->render = malloc(row->size + tabs*7 + 1);
+  row->render = malloc(row->size + tabs * (editor.cfg->tab_size) + 1);
 
   int idx = 0;
   for (j = 0; j < row->size; j++) {
     if (row->chars[j] == '\t') {
       row->render[idx++] = ' ';
-      while (idx % 8 != 0) row->render[idx++] = ' ';
+      while (idx % (editor.cfg->tab_size) != 0) row->render[idx++] = ' ';
     } else {
       row->render[idx++] = row->chars[j];
     }
@@ -207,6 +200,13 @@ void editorInsertRow(int at, char *s, size_t len) {
 
   editor.numrows++;
   editor.dirty++;
+
+  editor.numrows_digits = 0;
+  int num_rows = editor.numrows;
+  while (num_rows) {
+    num_rows /= 10;
+    editor.numrows_digits++;
+  }
 }
 
 int editorRowCxToRx(erow *row, int cx) {
@@ -214,7 +214,7 @@ int editorRowCxToRx(erow *row, int cx) {
   int j;
   for (j = 0; j < cx; j++) {
     if (row->chars[j] == '\t')
-      rx += (AETHERIS_TAB_STOP - 1) - (rx % AETHERIS_TAB_STOP);
+      rx += (editor.cfg->tab_size - 1) - (rx % editor.cfg->tab_size);
     rx++;
   }
   return rx;
@@ -225,48 +225,27 @@ int editorRowRxToCx(erow *row, int rx) {
   int cx;
   for (cx = 0; cx < row->size; cx++) {
     if (row->chars[cx] == '\t')
-      cur_rx += (AETHERIS_TAB_STOP - 1) - (cur_rx % AETHERIS_TAB_STOP);
+      cur_rx += (editor.cfg->tab_size - 1) - (cur_rx % editor.cfg->tab_size);
     cur_rx++;
     if (cur_rx > rx) return cx;
   }
   return cx;
 }
 
-void editorUpdateLinenumIndent() {
-  int digit;
-  int numrows = editor.numrows;
-
-  if (numrows == 0) {
-    digit = 0;
-    editor.linenum_indent = 2;
-    return;
-  }
-
-  digit = 1;
-  while (numrows >= 10) {
-    numrows = numrows / 10;
-    digit++;
-  }
-  editor.linenum_indent = digit + 2;
-}
-
 void editorRefreshScreen() {
-  editorUpdateLinenumIndent();
-  editor.screencols = editor.raw_screencols - editor.linenum_indent;
-
   struct abuf ab = ABUF_INIT;
 
-  abAppend(&ab, "\x1b[?25l", 6);
+  abufAppend(&ab, "\x1b[?25l");
 
   if (editor.mode == MODE_INSERT) {
     // Insert mode: Change to vertical bar
-    abAppend(&ab, "\x1b[6 q", 5);
-  } else if (editor.mode == MODE_NORMAL) {
+    abufAppend(&ab, "\x1b[6 q");
+  } else {
     // Normal mode: Change to block cursor
-    abAppend(&ab, "\x1b[2 q", 5);
+    abufAppend(&ab, "\x1b[2 q");
   }
 
-  abAppend(&ab, "\x1b[H", 3);
+  abufAppend(&ab, "\x1b[H");
 
   editorScroll();
 
@@ -275,10 +254,10 @@ void editorRefreshScreen() {
   editorDrawMessageBar(&ab);
 
   char buf[32];
-  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", editor.cy - editor.rowoff + 1, editor.rx - editor.coloff + 1 + editor.linenum_indent);
-  abAppend(&ab, buf, strlen(buf));
+  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", editor.cy - editor.rowoff + 1, (editor.rx - editor.coloff) + 1 + editor.numrows_digits + 1);
+  abufAppend(&ab, buf);
 
-  abAppend(&ab, "\x1b[?25h", 6);
+  abufAppend(&ab, "\x1b[?25h");
 
   write(STDOUT_FILENO, ab.b, ab.len);
   abFree(&ab);

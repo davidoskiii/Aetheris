@@ -10,6 +10,7 @@
 
 #include "../utils/utils.h"
 #include "../output/output.h"
+#include "../config/config.h"
 
 char* C_HL_extensions[] = { ".c", ".h", ".cpp", NULL };
 char* C_HL_keywords[] = {

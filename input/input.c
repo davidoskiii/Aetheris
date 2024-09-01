@@ -9,6 +9,7 @@
 #include "../terminal/terminal.h"
 #include "../output/output.h"
 #include "../utils/utils.h"
+#include "../config/config.h"
 #include "../common.h"
 
 void editorMoveCursor(int key) {
@@ -144,6 +145,13 @@ void editorDelRow(int at) {
   for (int j = at; j < editor.numrows - 1; j++) editor.row[j].idx--;
   editor.numrows--;
   editor.dirty++;
+
+  editor.numrows_digits = 0;
+  int num_rows = editor.numrows;
+  while (num_rows) {
+    num_rows /= 10;
+    editor.numrows_digits++;
+  }
 }
 
 char *editorPrompt(char *prompt, void (*callback)(char *, int)) {
@@ -179,6 +187,10 @@ char *editorPrompt(char *prompt, void (*callback)(char *, int)) {
 
     if (callback) callback(buf, c);
   }
+  if (getWindowSize(&editor.screenrows, &editor.screencols) == -1)
+      die("getWindowSize");
+  editor.screenrows -= 3;
+  editor.screencols -= editor.numrows_digits + 1;
 }
 
 int editorNormalMovement(int key) {
@@ -241,6 +253,8 @@ void editorProcessCommand(char* command, int quit_times) {
     editorQuitSafe(quit_times);
   } else if (strcmp(command, "q!") == 0) {
     editorQuit();
+  } else if (strcmp(command, "config") == 0) {
+    editorSetting();
   } else if (is_integer(command)) {
     editorGotoLine(command);
   } else {
@@ -251,6 +265,7 @@ void editorProcessCommand(char* command, int quit_times) {
 void editorProcessKeypress() {
   static int quit_times = AETHERIS_QUIT_TIMES;
   int c = editorReadKey();
+  editorSetStatusMessage("");
   switch (c) {
     case '\r':
       if (editor.is_selected) {

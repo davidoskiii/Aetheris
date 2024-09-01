@@ -1,3 +1,4 @@
+#pragma once
 #ifndef caetheris_syntax_h
 #define caetheris_syntax_h
 

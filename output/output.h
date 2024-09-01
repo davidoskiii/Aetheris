@@ -1,3 +1,4 @@
+#pragma once
 #ifndef caetheris_output_h
 #define caetheris_output_h
 
@@ -5,7 +6,10 @@
 
 #include "../common.h"
 
-typedef struct abuf abuf;
+typedef struct abuf {
+  char *b;
+  int len;
+} abuf;
 
 void editorDrawRows(struct abuf *ab);
 void editorInsertRow(int at, char *s, size_t len);

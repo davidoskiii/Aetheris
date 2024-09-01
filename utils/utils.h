@@ -1,5 +1,12 @@
+#pragma once
 #ifndef caetheris_utils_h
 #define caetheris_utils_h
+
+#include "../output/output.h"
+
+typedef struct Color {
+    int r, g, b;
+} Color;
 
 #define CTRL_KEY(k) ((k) & 0x1f)
 
@@ -18,5 +25,11 @@ void editorDeleteSelectText();
 void editorSelectText();
 
 char *editorRowsToString(int *buflen);
+
+Color strToColor(const char* color);
+int colorToANSI(Color color, char ansi[20], int is_bg);
+
+void abufAppend(abuf* ab, const char* s);
+void abufAppendN(abuf* ab, const char* s, size_t n);
 
 #endif
