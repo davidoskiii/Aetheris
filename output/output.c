@@ -270,7 +270,7 @@ int editorRowRxToCx(erow *row, int rx) {
   return cx;
 }
 
-void editorRefreshScreen() {
+int editorRefreshScreen() {
   struct abuf ab = ABUF_INIT;
 
   abufAppend(&ab, "\x1b[?25l");
@@ -298,8 +298,10 @@ void editorRefreshScreen() {
 
   abufAppend(&ab, "\x1b[?25h");
 
-  write(STDOUT_FILENO, ab.b, ab.len);
+  int success = write(STDOUT_FILENO, ab.b, ab.len) == ab.len;
   abFree(&ab);
+
+  return success;
 }
 
 void editorSetStatusMessage(const char *fmt, ...) {

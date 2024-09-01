@@ -19,7 +19,7 @@ int editorRowRxToCx(erow *row, int rx);
 int editorRowCxToRx(erow *row, int cx);
 int editorRowSxToCx(erow* row, int sx);
 
-void editorRefreshScreen();
+int editorRefreshScreen();
 void editorScroll();
 void editorSetStatusMessage(const char *fmt, ...);
 void editorClearStatusBar();
