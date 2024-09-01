@@ -289,9 +289,7 @@ void editorProcessKeypress() {
         quit_times--;
         return;
       }
-      write(STDOUT_FILENO, "\x1b[2J", 4);
-      write(STDOUT_FILENO, "\x1b[H", 3);
-
+      disableSwap();
       exit(0);
       break;
     }
@@ -422,6 +420,11 @@ void editorSpecialMovement(int key) {
       break;
     case '^':
       editor.cx = 0;
+      if (editor.row[editor.cy].chars[editor.cx] != ' ') break;
+      do {
+        editorMoveCursor(ARROW_RIGHT);
+      } while (editor.row[editor.cy].chars[editor.cx + 1] == ' ');
+      editorMoveCursor(ARROW_RIGHT);
       break;
     case '/':
       editorFind();
@@ -492,8 +495,7 @@ void editorNormalProcessKeypress() {
         quit_times--;
         return;
       }
-      write(STDOUT_FILENO, "\x1b[2J", 4);
-      write(STDOUT_FILENO, "\x1b[H", 3);
+      disableSwap();
       exit(0);
       break;
 
@@ -629,8 +631,7 @@ void editorVisualProcessKeypress() {
         quit_times--;
         return;
       }
-      write(STDOUT_FILENO, "\x1b[2J", 4);
-      write(STDOUT_FILENO, "\x1b[H", 3);
+      disableSwap();
       exit(0);
       break;
 

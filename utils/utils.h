@@ -32,4 +32,7 @@ int colorToANSI(Color color, char ansi[20], int is_bg);
 void abufAppend(abuf* ab, const char* s);
 void abufAppendN(abuf* ab, const char* s, size_t n);
 
+void enableSwap();
+void disableSwap();
+
 #endif

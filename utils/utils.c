@@ -27,9 +27,7 @@ void abufAppendN(abuf* ab, const char* s, size_t n) {
 }
 
 void die(const char *s) {
-  write(STDOUT_FILENO, "\x1b[2J", 4);
-  write(STDOUT_FILENO, "\x1b[H", 3);
-
+  disableSwap();
   perror(s);
   exit(1);
 }
@@ -84,9 +82,7 @@ void editorOpen(char *filename) {
 }
 
 void editorQuit() {
-  write(STDOUT_FILENO, "\x1b[2J", 4);
-  write(STDOUT_FILENO, "\x1b[H", 3);
-
+  disableSwap();
   exit(0);
 }
 
@@ -265,9 +261,7 @@ void editorQuitSafe(int quit_times) {
     quit_times--;
     return;
   }
-  write(STDOUT_FILENO, "\x1b[2J", 4);
-  write(STDOUT_FILENO, "\x1b[H", 3);
-
+  disableSwap();
   exit(0);
 }
 
@@ -344,3 +338,7 @@ int colorToANSI(Color color, char ansi[20], int is_bg) {
   return snprintf(ansi, 20, "\x1b[%d;2;%d;%d;%dm", is_bg ? 48 : 38, color.r,
                   color.g, color.b);
 }
+
+void enableSwap() { write(STDOUT_FILENO, "\x1b[?1049h\x1b[H", 11); }
+
+void disableSwap() { write(STDOUT_FILENO, "\x1b[?1049l", 8); }

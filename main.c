@@ -38,6 +38,8 @@ void initEditor() {
 
 int main(int argc, char *argv[]) {
   enableRawMode();
+  enableSwap();
+
   editorLoadConfig();
   initEditor();
 
