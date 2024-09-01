@@ -37,9 +37,21 @@ int editorReadKey() {
   int nread;
   char c;
 
-  while ((nread = read(STDIN_FILENO, &c, 1)) != 1) {
-    if (nread == -1 && errno != EAGAIN) die("read");
-  }
+    while ((nread = read(STDIN_FILENO, &c, 1)) != 1) {
+      if (nread == -1 && errno != EAGAIN)
+        die("read");
+
+      int rows, cols;
+      if (getWindowSize(&rows, &cols) == -1)
+        die("getWindowSize");
+      rows -= 3;
+      cols -= editor.numrows_digits + 1;
+      if (editor.screenrows != rows || editor.screencols != cols) {
+        editor.screenrows = rows;
+        editor.screencols = cols;
+        editorRefreshScreen();
+      }
+    }
 
   if (c == '\x1b') {
     char seq[3];

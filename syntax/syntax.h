@@ -1,3 +1,4 @@
+#pragma once
 #ifndef caetheris_syntax_h
 #define caetheris_syntax_h
 
@@ -12,7 +13,6 @@ extern struct editorSyntax HLDB[];
 
 void editorUpdateSyntax(erow *row);
 void editorSelectSyntaxHighlight();
-int editorSyntaxToColor(int hl);
 
 int is_separator(int c);
 

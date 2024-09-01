@@ -1,3 +1,4 @@
+#pragma once
 #ifndef caetheris_terminal_h
 #define caetheris_terminal_h
 

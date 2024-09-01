@@ -10,6 +10,7 @@
 
 #include "../utils/utils.h"
 #include "../output/output.h"
+#include "../config/config.h"
 
 char* C_HL_extensions[] = { ".c", ".h", ".cpp", NULL };
 char* C_HL_keywords[] = {
@@ -206,22 +207,5 @@ void editorSelectSyntaxHighlight() {
       }
       i++;
     }
-  }
-}
-
-int editorSyntaxToColor(int hl) {
-  switch (hl) {
-    case HL_COMMENT:
-    case HL_MLCOMMENT:
-      return 90;
-
-    case HL_PAREN: return 91;
-    case HL_FUNCTION: return 94;
-    case HL_KEYWORD: return 35;
-    case HL_IDENTIFIER: return 93;
-    case HL_STRING: return 92;
-    case HL_NUMBER: return 93;
-    case HL_MATCH: return 91;
-    default: return 37;
   }
 }
