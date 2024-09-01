@@ -14,4 +14,6 @@ extern struct editorSyntax HLDB[];
 void editorUpdateSyntax(erow *row);
 void editorSelectSyntaxHighlight();
 
+int is_separator(int c);
+
 #endif

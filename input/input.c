@@ -8,6 +8,7 @@
 
 #include "../terminal/terminal.h"
 #include "../output/output.h"
+#include "../motions/motions.h"
 #include "../utils/utils.h"
 #include "../config/config.h"
 #include "../common.h"
@@ -27,6 +28,8 @@ void editorMoveCursor(int key) {
     case ARROW_RIGHT:
       if (row && editor.cx < row->size) {
         editor.cx++;
+      } else if (editor.cy == editor.numrows - 1 && editor.cx == editor.row[editor.cy].size) {
+        break;
       } else if (row && editor.cx == row->size) {
         editor.cy++;
         editor.cx = 0;
@@ -38,7 +41,7 @@ void editorMoveCursor(int key) {
       }
       break;
     case ARROW_DOWN:
-      if (editor.cy < editor.numrows) {
+      if (editor.cy < editor.numrows - 1) {
         editor.cy++;
       }
       break;
@@ -395,40 +398,29 @@ void editorSpecialMovement(int key) {
 
   switch (key) {
     case 'w':
-      while (!isStopChr(editor.row[editor.cy].chars[editor.cx], stopChars)) {
-        editorMoveCursor(ARROW_RIGHT);
-        while (isStopChr(editor.row[editor.cy].chars[editor.cx + 1], stopChars)) {
-          editorMoveCursor(ARROW_RIGHT);
-        }
-      }
-      editorMoveCursor(ARROW_RIGHT);
+      editorMoveCursorWordForward();
       break;
     case 'b':
-      while (!isStopChr(editor.row[editor.cy].chars[editor.cx], stopChars)) {
-        editorMoveCursor(ARROW_LEFT);
-        while (isStopChr(editor.row[editor.cy].chars[editor.cx - 1], stopChars)) {
-          editorMoveCursor(ARROW_LEFT);
-        }
-      }
-      editorMoveCursor(ARROW_LEFT);
+      editorMoveCursorWordBackward();
       break;
-  
-    case '$': {
-      if (editor.cy < editor.numrows) editor.cx = editor.row[editor.cy].size;
-      editorMoveCursor(ARROW_LEFT);
       break;
-    }
-
-    case '^': {
-      editor.cx = 0;
-      if (editor.row[editor.cy].chars[editor.cx] != ' ') break;
-      do {
-        editorMoveCursor(ARROW_RIGHT);
-      } while (editor.row[editor.cy].chars[editor.cx + 1] == ' ');
+    case 'J':
+      editorJoinLines();
+      break;
+    case 'x':
       editorMoveCursor(ARROW_RIGHT);
+      editorDelChar();
       break;
-    }
-
+    case '$':
+      if (editor.cy < editor.numrows)
+        editor.cx = editor.row[editor.cy].size;  // move to end of the line
+      break;
+    case '^':
+      editor.cx = 0;
+      break;
+    case '/':
+      editorFind();
+      break;
     case '}':
       editor.cx = 0;
       editorMoveCursor(ARROW_DOWN);
@@ -472,8 +464,11 @@ void editorNormalProcessKeypress() {
 
     case 'w':
     case 'b':
+    case 'J':
+    case 'x':
     case '$':
     case '^':
+    case '/':
     case '}':
     case '{':
       for (int i = 0; i < count; i++) {
@@ -606,8 +601,11 @@ void editorVisualProcessKeypress() {
 
     case 'w':
     case 'b':
+    case 'J':
+    case 'x':
     case '$':
     case '^':
+    case '/':
     case '}':
     case '{':
       for (int i = 0; i < count; i++) {
