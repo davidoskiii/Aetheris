@@ -22,6 +22,7 @@ enum editorHighlight {
   HL_STRING,
   HL_NUMBER,
   HL_MATCH,
+  HL_SELECT,
   HL_TYPE_COUNT
 };
 

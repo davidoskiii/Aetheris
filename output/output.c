@@ -145,7 +145,7 @@ void editorDrawRows(struct abuf *ab) {
             current_color = -1;
             abufAppend(ab, ANSI_CLEAR);
             char buf[20];
-            colorToANSI(editor.cfg->highlight_color[0], buf, 0);
+            colorToANSI(editor.cfg->highlight_color[HL_SELECT], buf, 0);
             abufAppend(ab, ANSI_INVERT);
             abufAppend(ab, buf);
           }
@@ -158,6 +158,8 @@ void editorDrawRows(struct abuf *ab) {
             char buf[20];
             colorToANSI(editor.cfg->highlight_color[color], buf, 0);
             abufAppend(ab, buf);
+            if (color == HL_MATCH)
+              abufAppend(ab, ANSI_INVERT);
           }
           abufAppendN(ab, &c[j], 1);
         }

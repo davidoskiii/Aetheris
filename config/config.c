@@ -11,15 +11,18 @@
 static ConfigSettings cfg = {.tab_size = 4,
                            .whitespace = 0,
                            .status_color = {{00, 00, 00}, {255, 255, 255}},
-                           .highlight_color = {{212, 212, 212},
-                                               {106, 153, 85},
-                                               {106, 153, 85},
-                                               {197, 134, 192},
-                                               {86, 156, 214},
-                                               {78, 201, 176},
-                                               {206, 145, 120},
-                                               {181, 206, 168},
-                                               {201, 79, 103}}};
+                           .highlight_color = {{212, 212, 212}, // NORMAL
+                                               {78, 201, 176}, // PARENT
+                                               {85, 114, 237}, // FUNCTION
+                                               {106, 153, 85}, // COMMENT
+                                               {106, 153, 85}, // COMMENT
+                                               {197, 134, 192}, // KEYWORD
+                                               {78, 201, 176}, // MACRO
+                                               {86, 156, 214}, // IDENTIFIER
+                                               {206, 145, 120}, // STRING
+                                               {181, 206, 168}, // NUMBER
+                                               {218, 165, 32}, // MATCH
+                                               {97, 176, 255}}}; // SELECT
 
 static int parseLine(char* line, int verbose) {
   char* token = strtok(line, " ");
@@ -57,30 +60,32 @@ static int parseLine(char* line, int verbose) {
     }
     Color color = strToColor(argv[2]);
     if (strcmp(argv[1], "status.fg") == 0) {
-        editor.cfg->status_color[0] = color;
+      editor.cfg->status_color[0] = color;
     } else if (strcmp(argv[1], "status.bg") == 0) {
-        editor.cfg->status_color[1] = color;
+      editor.cfg->status_color[1] = color;
     } else if (strcmp(argv[1], "hl.normal") == 0) {
-        editor.cfg->highlight_color[HL_NORMAL] = color;
+      editor.cfg->highlight_color[HL_NORMAL] = color;
     } else if (strcmp(argv[1], "hl.comment") == 0) {
-        editor.cfg->highlight_color[HL_COMMENT] = color;
-        editor.cfg->highlight_color[HL_MLCOMMENT] = color;
+      editor.cfg->highlight_color[HL_COMMENT] = color;
+      editor.cfg->highlight_color[HL_MLCOMMENT] = color;
     } else if (strcmp(argv[1], "hl.keyword") == 0) {
-        editor.cfg->highlight_color[HL_KEYWORD] = color;
+      editor.cfg->highlight_color[HL_KEYWORD] = color;
     } else if (strcmp(argv[1], "hl.identifier") == 0) {
-        editor.cfg->highlight_color[HL_IDENTIFIER] = color;
+      editor.cfg->highlight_color[HL_IDENTIFIER] = color;
     } else if (strcmp(argv[1], "hl.parentheses") == 0) {
-        editor.cfg->highlight_color[HL_PAREN] = color;
+      editor.cfg->highlight_color[HL_PAREN] = color;
     } else if (strcmp(argv[1], "hl.macro") == 0) {
-        editor.cfg->highlight_color[HL_MACRO] = color;
+      editor.cfg->highlight_color[HL_MACRO] = color;
     } else if (strcmp(argv[1], "hl.function") == 0) {
-        editor.cfg->highlight_color[HL_FUNCTION] = color;
+      editor.cfg->highlight_color[HL_FUNCTION] = color;
     } else if (strcmp(argv[1], "hl.string") == 0) {
-        editor.cfg->highlight_color[HL_STRING] = color;
+      editor.cfg->highlight_color[HL_STRING] = color;
     } else if (strcmp(argv[1], "hl.number") == 0) {
-        editor.cfg->highlight_color[HL_NUMBER] = color;
+      editor.cfg->highlight_color[HL_NUMBER] = color;
     } else if (strcmp(argv[1], "hl.match") == 0) {
-        editor.cfg->highlight_color[HL_MATCH] = color;
+      editor.cfg->highlight_color[HL_MATCH] = color;
+    } else if (strcmp(argv[1], "hl.select") == 0) {
+      editor.cfg->highlight_color[HL_SELECT] = color;
     } else {
       if (verbose)
         editorSetStatusMessage("Unknown target %s.", argv[1]);
