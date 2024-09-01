@@ -20,29 +20,33 @@ void editorMoveCursor(int key) {
     case ARROW_LEFT:
       if (editor.cx != 0) {
         editor.cx--;
+        editor.sx = editorRowCxToRx(&(editor.row[editor.cy]), editor.cx);
       } else if (editor.cy > 0) {
         editor.cy--;
         editor.cx = editor.row[editor.cy].size;
+        editor.sx = editorRowCxToRx(&(editor.row[editor.cy]), editor.cx);
       }
       break;
     case ARROW_RIGHT:
       if (row && editor.cx < row->size) {
         editor.cx++;
-      } else if (editor.cy == editor.numrows - 1 && editor.cx == editor.row[editor.cy].size) {
-        break;
-      } else if (row && editor.cx == row->size) {
+        editor.sx = editorRowCxToRx(&(editor.row[editor.cy]), editor.cx);
+      } else if (row && (editor.cy + 1 < editor.numrows) && editor.cx == row->size) {
         editor.cy++;
         editor.cx = 0;
+        editor.sx = 0;
       }
       break;
     case ARROW_UP:
       if (editor.cy != 0) {
         editor.cy--;
+        editor.cx = editorRowSxToCx(&(editor.row[editor.cy]), editor.sx);
       }
       break;
     case ARROW_DOWN:
       if (editor.cy < editor.numrows - 1) {
         editor.cy++;
+        editor.cx = editorRowSxToCx(&(editor.row[editor.cy]), editor.sx);
       }
       break;
   }

@@ -17,6 +17,7 @@ void editorUpdateRow(erow *row);
 
 int editorRowRxToCx(erow *row, int rx);
 int editorRowCxToRx(erow *row, int cx);
+int editorRowSxToCx(erow* row, int sx);
 
 void editorRefreshScreen();
 void editorScroll();

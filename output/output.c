@@ -39,8 +39,12 @@ void editorDrawStatusBar(struct abuf *ab) {
   int len = snprintf(status, sizeof(status), " %s | %.20s - %d lines %s", mode, 
         editor.filename ? editor.filename : "[No Name]", 
         editor.numrows, editor.dirty ? "(modified)" : "");
-  int rlen = snprintf(rstatus, sizeof(rstatus), "%s | %d/%d",
-    editor.syntax ? editor.syntax->filetype : "no ft", editor.cy + 1, editor.numrows);
+
+  erow *row = (editor.cy >= editor.numrows) ? NULL : &editor.row[editor.cy];
+  int rowlen = row ? row->size : 0;
+
+  int rlen = snprintf(rstatus, sizeof(rstatus), "%s | Line: %d/%d | Col: %d/%d  ",
+    editor.syntax ? editor.syntax->filetype : "no ft", editor.cy + 1, editor.numrows, editor.rx + 1, rowlen + 1);
   if (len > cols) len = cols;
   abAppend(ab, status, len);
   while (len < cols) {
@@ -227,6 +231,26 @@ int editorRowCxToRx(erow *row, int cx) {
     rx++;
   }
   return rx;
+}
+
+int editorRowSxToCx(erow* row, int sx) {
+  if (sx <= 0) return 0;
+  int cx = 0;
+  int rx = 0;
+  int rx2 = 0;
+  while (cx < row->size && rx < sx) {
+    rx2 = rx;
+    if (row->chars[cx] == '\t') {
+      rx += (editor.cfg->tab_size - 1) - (rx % editor.cfg->tab_size);
+    }
+    rx++;
+    cx++;
+  }
+
+  if (rx - sx >= sx - rx2) {
+    cx--;
+  }
+  return cx;
 }
 
 int editorRowRxToCx(erow *row, int rx) {
