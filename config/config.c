@@ -8,21 +8,27 @@
 #include "../utils/utils.h"
 #include "../output/output.h"
 
-static ConfigSettings cfg = {.tab_size = 4,
-                           .whitespace = 0,
-                           .status_color = {{00, 00, 00}, {255, 255, 255}},
-                           .highlight_color = {{212, 212, 212}, // NORMAL
-                                               {78, 201, 176}, // PARENT
-                                               {85, 114, 237}, // FUNCTION
-                                               {106, 153, 85}, // COMMENT
-                                               {106, 153, 85}, // COMMENT
-                                               {197, 134, 192}, // KEYWORD
-                                               {78, 201, 176}, // MACRO
-                                               {86, 156, 214}, // IDENTIFIER
-                                               {206, 145, 120}, // STRING
-                                               {181, 206, 168}, // NUMBER
-                                               {218, 165, 32}, // MATCH
-                                               {97, 176, 255}}}; // SELECT
+static ConfigSettings cfg = {
+  .tab_size = 4,
+  .whitespace = 0,
+  .status_color = {{00, 00, 00}, {255, 255, 255}},
+  .auto_indent = 1,
+  .syntax = 1,
+  .highlight_color = {
+    {212, 212, 212}, // NORMAL
+    {78, 201, 176}, // PARENT
+    {85, 114, 237}, // FUNCTION
+    {106, 153, 85}, // COMMENT
+    {106, 153, 85}, // COMMENT
+    {197, 134, 192}, // KEYWORD
+    {78, 201, 176}, // MACRO
+    {86, 156, 214}, // IDENTIFIER
+    {206, 145, 120}, // STRING
+    {181, 206, 168}, // NUMBER
+    {218, 165, 32}, // MATCH
+    {97, 176, 255} // SELECT
+  }
+};
 
 static int parseLine(char* line, int verbose) {
   char* token = strtok(line, " ");
@@ -46,6 +52,20 @@ static int parseLine(char* line, int verbose) {
     if (size < 1)
       return 0;
     editor.cfg->tab_size = size;
+  } else if (strcmp(argv[0], "autoindent") == 0) {
+    if (argc != 2) {
+      if (verbose)
+        editorSetStatusMessage("Usage: autoindent [0|1]");
+      return 0;
+    }
+    editor.cfg->auto_indent = atoi(argv[1]);
+  } else if (strcmp(argv[0], "syntax") == 0) {
+    if (argc != 2) {
+      if (verbose)
+        editorSetStatusMessage("Usage: syntax [0|1]");
+      return 0;
+    }
+    editor.cfg->syntax = atoi(argv[1]);
   } else if (strcmp(argv[0], "whitespace") == 0) {
     if (argc != 2) {
       if (verbose) editorSetStatusMessage("Usage: whitespace [0|1]");

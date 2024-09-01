@@ -52,6 +52,7 @@ typedef struct editorConfig {
   int mode;
   int is_selected;
   int select_y, select_x;
+  int bracket_autocomplete;
   ConfigSettings *cfg;
   struct editorSyntax *syntax;
   struct termios orig_termios;

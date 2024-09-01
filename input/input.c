@@ -128,17 +128,19 @@ void editorInsertNewline() {
     erow* curr_row = &(editor.row[editor.cy]);
     erow* new_row = &(editor.row[editor.cy + 1]);
 
-    while (i < editor.cx && (curr_row->chars[i] == ' ' || curr_row->chars[i] == '\t'))
-      i++;
-    if (i != 0)
-      editorRowAppendString(new_row, curr_row->chars, i);
-    if (curr_row->chars[editor.cx - 1] == ':' ||
-      (curr_row->chars[editor.cx - 1] == '{' && curr_row->chars[editor.cx] != '}')) {
-      if (editor.cfg->whitespace) {
-        for (int j = 0; j < editor.cfg->tab_size; j++, i++) editorRowAppendString(new_row, " ", 1);
-      } else {
-        editorRowAppendString(new_row, "\t", 1);
+    if (editor.cfg->auto_indent) {
+      while (i < editor.cx && (curr_row->chars[i] == ' ' || curr_row->chars[i] == '\t'))
         i++;
+      if (i != 0)
+        editorRowAppendString(new_row, curr_row->chars, i);
+      if (curr_row->chars[editor.cx - 1] == ':' ||
+        (curr_row->chars[editor.cx - 1] == '{' && curr_row->chars[editor.cx] != '}')) {
+        if (editor.cfg->whitespace) {
+          for (int j = 0; j < editor.cfg->tab_size; j++, i++) editorRowAppendString(new_row, " ", 1);
+        } else {
+          editorRowAppendString(new_row, "\t", 1);
+          i++;
+        }
       }
     }
     editorRowAppendString(new_row, &(curr_row->chars[editor.cx]), curr_row->size - editor.cx);
@@ -282,6 +284,32 @@ void editorProcessCommand(char* command, int quit_times) {
   }
 }
 
+static char isOpenBracket(int key) {
+  switch (key) {
+    case '(':
+      return ')';
+    case '[':
+      return ']';
+    case '{':
+      return '}';
+    default:
+      return 0;
+  }
+}
+
+static char isCloseBracket(int key) {
+  switch (key) {
+    case ')':
+      return '(';
+    case ']':
+      return '[';
+    case '}':
+      return '{';
+    default:
+      return 0;
+  }
+}
+
 void editorProcessKeypress() {
   static int quit_times = AETHERIS_QUIT_TIMES;
   int c = editorReadKey();
@@ -292,6 +320,7 @@ void editorProcessKeypress() {
         editorDeleteSelectText();
         editor.is_selected = 0;
       }
+      editor.bracket_autocomplete = 0;
       editorInsertNewline();
       break;
 
@@ -318,7 +347,34 @@ void editorProcessKeypress() {
         break;
       }
       if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
+      else if (editor.bracket_autocomplete &&
+               (isCloseBracket(editor.row[editor.cy].chars[editor.cx]) ==
+                    editor.row[editor.cy].chars[editor.cx - 1] ||
+                (editor.row[editor.cy].chars[editor.cx] == '\'' &&
+                 editor.row[editor.cy].chars[editor.cx - 1] == '\'') ||
+                (editor.row[editor.cy].chars[editor.cx] == '"' &&
+                 editor.row[editor.cy].chars[editor.cx - 1] == '"'))) {
+          editor.bracket_autocomplete--;
+          editorMoveCursor(ARROW_RIGHT);
+          editorDelChar();
+      }
+      char deleted_char = editor.row[editor.cy].chars[editor.cx - 1];
       editorDelChar();
+      if (deleted_char == ' ') {
+        int should_delete_tab = 1;
+        for (int i = 0; i < editor.cx; i++) {
+          if (!isspace(editor.row[editor.cy].chars[i])) {
+            should_delete_tab = 0;
+          }
+        }
+        if (should_delete_tab) {
+          int idx = editorRowCxToRx(&(editor.row[editor.cy]), editor.cx);
+          while (idx % editor.cfg->tab_size != 0) {
+            editorDelChar();
+            idx--;
+          }
+        }
+      }
       break;
 
     case '\x1b':
@@ -327,15 +383,23 @@ void editorProcessKeypress() {
       break;
 
     case HOME_KEY:
+      if (editor.cx == 0) break;
       editor.cx = 0;
+      editor.sx = 0;
       editor.is_selected = 0;
+      editor.bracket_autocomplete = 0;
       break;
     case END_KEY:
-      if (editor.cy < editor.numrows) editor.cx = editor.row[editor.cy].size;
-      editor.is_selected = 0;
+      if (editor.cy < editor.numrows && editor.cx != editor.row[editor.cy].size) {
+        editor.cx = editor.row[editor.cy].size;
+        editor.sx = editorRowCxToRx(&(editor.row[editor.cy]), editor.cx);
+        editor.is_selected = 0;
+        editor.bracket_autocomplete = 0;
+      }
       break;
     case PAGE_UP: {
       editor.is_selected = 0;
+      editor.bracket_autocomplete = 0;
       if (c == PAGE_UP) {
         editor.cy = editor.rowoff;
       } else if (c == PAGE_DOWN) {
@@ -346,6 +410,7 @@ void editorProcessKeypress() {
     }
     case PAGE_DOWN: {
       editor.is_selected = 0;
+      editor.bracket_autocomplete = 0;
       int times = editor.screenrows;
       while (times--) editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
       break;
@@ -354,25 +419,32 @@ void editorProcessKeypress() {
     case ARROW_DOWN:
     case ARROW_LEFT:
     case ARROW_RIGHT:
-        if (editor.is_selected) {
-          int start_x, start_y, end_x, end_y;
-          getSelectStartEnd(&start_x, &start_y, &end_x, &end_y);
+      if (editor.is_selected) {
+        int start_x, start_y, end_x, end_y;
+        getSelectStartEnd(&start_x, &start_y, &end_x, &end_y);
 
-          if (c == ARROW_UP || c == ARROW_LEFT) {
-            editor.cx = start_x;
-            editor.cy = start_y;
-          }
-          else {
-            editor.cx = end_x;
-            editor.cy = end_y;
-          }
-          editor.sx = editorRowCxToRx(&(editor.row[editor.cy]), editor.cx);
-          if (c == ARROW_UP || c == ARROW_DOWN) {
-            editorMoveCursor(c);
-          }
-          editor.is_selected = 0;
+        if (c == ARROW_UP || c == ARROW_LEFT) {
+          editor.cx = start_x;
+          editor.cy = start_y;
         }
-      editorMoveCursor(c);
+        else {
+          editor.cx = end_x;
+          editor.cy = end_y;
+        }
+        editor.sx = editorRowCxToRx(&(editor.row[editor.cy]), editor.cx);
+        if (c == ARROW_UP || c == ARROW_DOWN) {
+          editorMoveCursor(c);
+        }
+        editor.is_selected = 0;
+        } else {
+          if (editor.bracket_autocomplete) {
+            if (ARROW_RIGHT)
+                editor.bracket_autocomplete--;
+            else
+                editor.bracket_autocomplete = 0;
+          }
+          editorMoveCursor(c);
+        }
       break;
 
     default:
@@ -380,6 +452,34 @@ void editorProcessKeypress() {
         if (editor.is_selected) {
           editorDeleteSelectText();
           editor.is_selected = 0;
+        }
+        int close_bracket = isOpenBracket(c);
+        int open_bracket = isCloseBracket(c);
+        if (close_bracket) {
+          editorInsertChar(c);
+          editorInsertChar(close_bracket);
+          editor.cx--;
+          editor.bracket_autocomplete++;
+        } else if (open_bracket) {
+          if (editor.bracket_autocomplete && editor.row[editor.cy].chars[editor.cx] == c) {
+            editor.bracket_autocomplete--;
+            editor.cx++;
+          } else {
+            editorInsertChar(c);
+          }
+        } else if (c == '\'' || c == '"') {
+          if (editor.row[editor.cy].chars[editor.cx] != c) {
+            editorInsertChar(c);
+            editorInsertChar(c);
+            editor.cx--;
+            editor.bracket_autocomplete++;
+          } else if (editor.bracket_autocomplete &&
+                   editor.row[editor.cy].chars[editor.cx] == c) {
+            editor.bracket_autocomplete--;
+            editor.cx++;
+          } else {
+            editorInsertChar(c);
+          }
         } else {
           editorInsertChar(c);
         }

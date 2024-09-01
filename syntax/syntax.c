@@ -40,6 +40,8 @@ void editorUpdateSyntax(erow *row) {
   row->selected = realloc(row->selected, row->rsize);
   memset(row->hl, HL_NORMAL, row->rsize);
 
+
+  if (!editor.cfg->syntax) return;
   if (editor.syntax == NULL) return;
 
   char **keywords = editor.syntax->keywords;

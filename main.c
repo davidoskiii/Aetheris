@@ -27,6 +27,7 @@ void initEditor() {
   editor.is_selected = 0;
   editor.select_x = 0;
   editor.select_y = 0;
+  editor.bracket_autocomplete = 0;
   editor.filename = NULL;
   editor.statusmsg[0] = '\0';
   editor.statusmsg_time = 0;
