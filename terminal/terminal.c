@@ -89,6 +89,17 @@ int editorReadKey() {
                 case 'D':
                   return SHIFT_LEFT;
               }
+            } else if (seq[3] == '5') {
+              switch (seq[4]) {
+                case 'A':
+                  return CTRL_UP;
+                case 'B':
+                  return CTRL_DOWN;
+                case 'C':
+                  return CTRL_RIGHT;
+                case 'D':
+                  return CTRL_LEFT;
+              }
             }
           }
         }

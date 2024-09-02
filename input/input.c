@@ -38,12 +38,14 @@ void editorMoveCursor(int key) {
       }
       break;
     case ARROW_UP:
+    case CTRL_UP:
       if (editor.cy != 0) {
         editor.cy--;
         editor.cx = editorRowSxToCx(&(editor.row[editor.cy]), editor.sx);
       }
       break;
     case ARROW_DOWN:
+    case CTRL_DOWN:
       if (editor.cy < editor.numrows - 1) {
         editor.cy++;
         editor.cx = editorRowSxToCx(&(editor.row[editor.cy]), editor.sx);
@@ -310,6 +312,60 @@ static char isCloseBracket(int key) {
   }
 }
 
+void editorSpecialMovement(int key) {
+  char *stopChars = " '\"\n()[].#<>";
+
+  switch (key) {
+    case SHIFT_RIGHT:
+    case CTRL_RIGHT:
+    case 'w':
+      editorMoveCursorWordForward();
+      break;
+    case SHIFT_LEFT:
+    case CTRL_LEFT:
+    case 'b':
+      editorMoveCursorWordBackward();
+      break;
+    case 'J':
+      editorJoinLines();
+      break;
+    case 'x':
+      editorMoveCursor(ARROW_RIGHT);
+      editorDelChar();
+      break;
+    case '$':
+      if (editor.cy < editor.numrows)
+        editor.cx = editor.row[editor.cy].size;  // move to end of the line
+      editorMoveCursor(ARROW_LEFT);
+      break;
+    case '^':
+      editor.cx = 0;
+      if (editor.row[editor.cy].chars[editor.cx] != ' ') break;
+      do {
+        editorMoveCursor(ARROW_RIGHT);
+      } while (editor.row[editor.cy].chars[editor.cx + 1] == ' ');
+      editorMoveCursor(ARROW_RIGHT);
+      break;
+    case '/':
+      editorFind();
+      break;
+    case '}':
+      editor.cx = 0;
+      editorMoveCursor(ARROW_DOWN);
+      while (editor.row[editor.cy].size != 0) {
+        editorMoveCursor(ARROW_DOWN);
+      }
+      break;
+    case '{':
+      editor.cx = 0;
+      editorMoveCursor(ARROW_UP);
+      while (editor.row[editor.cy].size != 0) {
+        editorMoveCursor(ARROW_UP);
+      }
+      break;
+  }
+}
+
 void editorProcessKeypress() {
   static int quit_times = AETHERIS_QUIT_TIMES;
   int c = editorReadKey();
@@ -322,6 +378,12 @@ void editorProcessKeypress() {
       }
       editor.bracket_autocomplete = 0;
       editorInsertNewline();
+      break;
+
+
+    case CTRL_LEFT:
+    case CTRL_RIGHT:
+      editorSpecialMovement(c);
       break;
 
     case CTRL_KEY('q'): {
@@ -340,7 +402,6 @@ void editorProcessKeypress() {
       editorSave();
       break;
     case BACKSPACE:
-    case CTRL_KEY('h'):
     case DEL_KEY:
       if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
       else if (editor.bracket_autocomplete &&
@@ -378,48 +439,17 @@ void editorProcessKeypress() {
       editor.is_selected = 0;
       break;
 
-    case HOME_KEY:
-      if (editor.cx == 0) break;
-      editor.cx = 0;
-      editor.sx = 0;
-      editor.is_selected = 0;
-      editor.bracket_autocomplete = 0;
-      break;
-    case END_KEY:
-      if (editor.cy < editor.numrows && editor.cx != editor.row[editor.cy].size) {
-        editor.cx = editor.row[editor.cy].size;
-        editor.sx = editorRowCxToRx(&(editor.row[editor.cy]), editor.cx);
-        editor.is_selected = 0;
-        editor.bracket_autocomplete = 0;
-      }
-      break;
-    case PAGE_UP: {
-      editor.is_selected = 0;
-      editor.bracket_autocomplete = 0;
-      if (c == PAGE_UP) {
-        editor.cy = editor.rowoff;
-      } else if (c == PAGE_DOWN) {
-        editor.cy = editor.rowoff + editor.screenrows - 1;
-        if (editor.cy > editor.numrows) editor.cy = editor.numrows;
-      }
-    break;
-    }
-    case PAGE_DOWN: {
-      editor.is_selected = 0;
-      editor.bracket_autocomplete = 0;
-      int times = editor.screenrows;
-      while (times--) editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
-      break;
-    }
     case ARROW_UP:
     case ARROW_DOWN:
+    case CTRL_UP:
+    case CTRL_DOWN:
     case ARROW_LEFT:
     case ARROW_RIGHT:
       if (editor.is_selected) {
         int start_x, start_y, end_x, end_y;
         getSelectStartEnd(&start_x, &start_y, &end_x, &end_y);
 
-        if (c == ARROW_UP || c == ARROW_LEFT) {
+        if (c == ARROW_UP || c == CTRL_UP || c == ARROW_LEFT) {
           editor.cx = start_x;
           editor.cy = start_y;
         }
@@ -428,7 +458,7 @@ void editorProcessKeypress() {
           editor.cy = end_y;
         }
         editor.sx = editorRowCxToRx(&(editor.row[editor.cy]), editor.cx);
-        if (c == ARROW_UP || c == ARROW_DOWN) {
+        if (c == ARROW_UP || c == CTRL_UP || c == ARROW_DOWN || c == CTRL_DOWN) {
           editorMoveCursor(c);
         }
         editor.is_selected = 0;
@@ -502,59 +532,6 @@ int isStopChr(int c, char *s) {
     }
   }
   return 0;
-}
-
-void editorSpecialMovement(int key) {
-  char *stopChars = " '\"\n()[].#<>";
-
-  switch (key) {
-    case SHIFT_RIGHT:
-    case 'w':
-      editorMoveCursorWordForward();
-      break;
-    case SHIFT_LEFT:
-    case 'b':
-      editorMoveCursorWordBackward();
-      break;
-      break;
-    case 'J':
-      editorJoinLines();
-      break;
-    case 'x':
-      editorMoveCursor(ARROW_RIGHT);
-      editorDelChar();
-      break;
-    case '$':
-      if (editor.cy < editor.numrows)
-        editor.cx = editor.row[editor.cy].size;  // move to end of the line
-      editorMoveCursor(ARROW_LEFT);
-      break;
-    case '^':
-      editor.cx = 0;
-      if (editor.row[editor.cy].chars[editor.cx] != ' ') break;
-      do {
-        editorMoveCursor(ARROW_RIGHT);
-      } while (editor.row[editor.cy].chars[editor.cx + 1] == ' ');
-      editorMoveCursor(ARROW_RIGHT);
-      break;
-    case '/':
-      editorFind();
-      break;
-    case '}':
-      editor.cx = 0;
-      editorMoveCursor(ARROW_DOWN);
-      while (editor.row[editor.cy].size != 0) {
-        editorMoveCursor(ARROW_DOWN);
-      }
-      break;
-    case '{':
-      editor.cx = 0;
-      editorMoveCursor(ARROW_UP);
-      while (editor.row[editor.cy].size != 0) {
-        editorMoveCursor(ARROW_UP);
-      }
-      break;
-  }
 }
 
 void editorNormalProcessKeypress() {
@@ -652,23 +629,21 @@ void editorNormalProcessKeypress() {
       }
       break;
 
-    case CTRL_KEY('f'):
-      editorFind();
-      break;
-
     case PAGE_UP:
+    case CTRL_KEY('f'):
     case PAGE_DOWN:
+    case CTRL_KEY('b'):
       {
-        if (c == PAGE_UP) {
+        if (c == PAGE_UP || c == CTRL_KEY('f')) {
           editor.cy = editor.rowoff;
-        } else if (c == PAGE_DOWN) {
+        } else if (c == PAGE_DOWN || c == CTRL_KEY('b')) {
           editor.cy = editor.rowoff + editor.screenrows - 1;
           if (editor.cy > editor.numrows) editor.cy = editor.numrows;
         }
 
         int times = editor.screenrows;
         while (times--) {
-          editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
+          editorMoveCursor((c == PAGE_UP || c == CTRL_KEY('f')) ? ARROW_UP : ARROW_DOWN);
         }
       }
       break;
@@ -681,7 +656,6 @@ void editorNormalProcessKeypress() {
         editorMoveCursor(c);
       }
       break;
-
 
     case 'v':
       editor.select_x = editor.cx;
@@ -824,10 +798,6 @@ void editorVisualProcessKeypress() {
       }
       break;
 
-    case CTRL_KEY('f'):
-      editorFind();
-      break;
-
     case 'd':
     case BACKSPACE:
     case CTRL_KEY('h'):
@@ -840,18 +810,20 @@ void editorVisualProcessKeypress() {
       break;
 
     case PAGE_UP:
+    case CTRL_KEY('f'):
     case PAGE_DOWN:
+    case CTRL_KEY('b'):
       {
-        if (c == PAGE_UP) {
+        if (c == PAGE_UP || c == CTRL_KEY('f')) {
           editor.cy = editor.rowoff;
-        } else if (c == PAGE_DOWN) {
+        } else if (c == PAGE_DOWN || c == CTRL_KEY('b')) {
           editor.cy = editor.rowoff + editor.screenrows - 1;
           if (editor.cy > editor.numrows) editor.cy = editor.numrows;
         }
 
         int times = editor.screenrows;
         while (times--) {
-          editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
+          editorMoveCursor((c == PAGE_UP || c == CTRL_KEY('f')) ? ARROW_UP : ARROW_DOWN);
         }
       }
       break;
@@ -990,10 +962,6 @@ void editorVisualLineProcessKeypress() {
       }
       break;
 
-    case CTRL_KEY('f'):
-      editorFind();
-      break;
-
     case 'd':
     case BACKSPACE:
     case CTRL_KEY('h'):
@@ -1006,18 +974,20 @@ void editorVisualLineProcessKeypress() {
       break;
 
     case PAGE_UP:
+    case CTRL_KEY('f'):
     case PAGE_DOWN:
+    case CTRL_KEY('b'):
       {
-        if (c == PAGE_UP) {
+        if (c == PAGE_UP || c == CTRL_KEY('f')) {
           editor.cy = editor.rowoff;
-        } else if (c == PAGE_DOWN) {
+        } else if (c == PAGE_DOWN || c == CTRL_KEY('b')) {
           editor.cy = editor.rowoff + editor.screenrows - 1;
           if (editor.cy > editor.numrows) editor.cy = editor.numrows;
         }
 
         int times = editor.screenrows;
         while (times--) {
-          editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
+          editorMoveCursor((c == PAGE_UP || c == CTRL_KEY('f')) ? ARROW_UP : ARROW_DOWN);
         }
       }
       break;

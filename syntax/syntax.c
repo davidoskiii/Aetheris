@@ -21,11 +21,29 @@ char* C_HL_keywords[] = {
   "void|", NULL
 };
 
+char* LMQ_HL_extensions[] = { ".lmq", NULL };
+char* LMQ_HL_keywords[] = {
+  "switch", "if", "while", "for", "break", "continue", "return", "else",
+  "let", "enum", "typeof", "instanceof", "enum", "class", "case", "super",
+  "this", "let", "default", "const", "throw", "try", "catch", "assert",
+  "finally", "require", "using", "lambda", "as", "namespace", "static",
+  "do", "get", "set", "yield", "from", "async", "await", "abstract",
+  "function",
+  "true|", "false|", "nil|", NULL
+};
+
 struct editorSyntax HLDB[] = {
   {
     "c",
     C_HL_extensions,
     C_HL_keywords,
+    "//", "/*", "*/",
+    HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS
+  },
+  {
+    "luminique",
+    LMQ_HL_extensions,
+    LMQ_HL_keywords,
     "//", "/*", "*/",
     HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS
   },
@@ -39,7 +57,6 @@ void editorUpdateSyntax(erow *row) {
   row->hl = realloc(row->hl, row->rsize);
   row->selected = realloc(row->selected, row->rsize);
   memset(row->hl, HL_NORMAL, row->rsize);
-
 
   if (!editor.cfg->syntax) return;
   if (editor.syntax == NULL) return;
@@ -142,24 +159,51 @@ void editorUpdateSyntax(erow *row) {
       }
     }
 
+    // Check for capitalized words to highlight as HL_MACRO
+    if (prev_sep && isalpha(c) && isupper(c)) {
+      int start = i;
+      int is_macro = 1;
+
+      while (i < row->rsize && (isalnum(row->render[i]) || row->render[i] == '_')) {
+        if (!isupper(row->render[i]) && row->render[i] != '_') {
+          is_macro = 0;
+        }
+        i++;
+      }
+
+      if (is_macro) {
+        memset(&row->hl[start], HL_MACRO, i - start);
+        prev_sep = 0;
+        continue;
+      }
+    }
 
     if (prev_sep && isalpha(c)) {
       int start = i;
 
+      // Step 1: Detect a potential function name
       while (i < row->rsize && (isalnum(row->render[i]) || row->render[i] == '_')) {
         i++;
       }
 
+      // Step 2: Skip spaces after the function name
+      while (i < row->rsize && isspace(row->render[i])) {
+        i++;
+      }
+
+      // Step 3: Check for the opening parenthesis '('
       if (i < row->rsize && row->render[i] == '(') {
         int j = i + 1;
         int paren_count = 1;
 
+        // Step 4: Search for the closing parenthesis ')'
         while (j < row->rsize) {
           if (row->render[j] == '(') {
             paren_count++;
           } else if (row->render[j] == ')') {
             paren_count--;
             if (paren_count == 0) {
+              // Step 5: Highlight the function name
               memset(&row->hl[start], HL_FUNCTION, i - start);
               break;
             }
@@ -167,16 +211,20 @@ void editorUpdateSyntax(erow *row) {
           j++;
         }
       }
+
       prev_sep = 0;
       continue;
     }
 
-    if (c == '[' || c == ']' || c == '(' || c == ')' || c == '{' || c == '}' || c == ';') {
+    // Fix: Highlight punctuation but treat as a separator
+    if (c == '[' || c == ']' || c == '(' || c == ')' || c == '{' || c == '}' 
+        || c == ';' || c == ':' || c == '@') {
       row->hl[i] = HL_PAREN;
+      prev_sep = 1;  // Treat as a separator for the next iteration
       i++;
-      prev_sep = 0;
       continue;
     }
+
     prev_sep = is_separator(c);
     i++;
   }
