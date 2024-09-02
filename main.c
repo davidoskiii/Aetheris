@@ -59,14 +59,19 @@ int main(int argc, char *argv[]) {
 
   while (1) {
     editorRefreshScreen();
-    if (editor.mode == MODE_NORMAL) {
-      editorNormalProcessKeypress();
-    } else if (editor.mode == MODE_VISUAL) {
-      editorVisualProcessKeypress();
-    } else if (editor.mode == MODE_VISUAL_LINE) {
-      editorVisualLineProcessKeypress();
-    } else {
-      editorProcessKeypress();
+    switch (editor.mode) {
+      case MODE_NORMAL: 
+        editorNormalProcessKeypress();
+        break;
+      case MODE_INSERT: 
+        editorProcessKeypress();
+        break;
+      case MODE_VISUAL: 
+        editorVisualProcessKeypress();
+        break;
+      case MODE_VISUAL_LINE: 
+        editorVisualLineProcessKeypress();
+        break;
     }
   }
 

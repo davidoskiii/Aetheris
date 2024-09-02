@@ -34,14 +34,20 @@ void editorDrawStatusBar(struct abuf *ab) {
 
   char status[80], rstatus[80];
   char* mode;
-  if (editor.mode == MODE_NORMAL) {
-    mode = "NORMAL";
-  } else if (editor.mode == MODE_INSERT) {
-    mode = "INSERT";
-  } else if (editor.mode == MODE_VISUAL) {
-    mode = "VISUAL";
-  } else if (editor.mode == MODE_VISUAL_LINE) {
-    mode = "V-LINE";
+
+  switch (editor.mode) {
+    case MODE_NORMAL: 
+      mode = "NORMAL";
+      break;
+    case MODE_INSERT: 
+      mode = "INSERT";
+      break;
+    case MODE_VISUAL: 
+      mode = "VISUAL";
+      break;
+    case MODE_VISUAL_LINE: 
+      mode = "V-LINE";
+      break;
   }
 
   int len = snprintf(status, sizeof(status), " %s | %.20s - %d lines %s", mode, 
