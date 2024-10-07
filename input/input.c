@@ -724,6 +724,7 @@ void editorVisualProcessKeypress() {
     }
 
     case '\x1b': 
+      if (editor.cx != 0) editor.cx = editor.cx - 1;
       editor.mode = MODE_NORMAL;
       editor.is_selected = 0;
       break;
@@ -888,6 +889,7 @@ void editorVisualLineProcessKeypress() {
     }
 
     case '\x1b': 
+      if (editor.cx != 0) editor.cx = editor.cx - 1;
       editor.mode = MODE_NORMAL;
       editor.is_selected = 0;
       break;
